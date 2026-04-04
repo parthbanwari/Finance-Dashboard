@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Deep Navy & Emerald — shadcn-compatible HSL tokens.
+ * Navy: cool dark base; Emerald: primary accent for CTAs & positive money flow.
+ */
+@layer base {
+  :root {
+    --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+
+    /* Deep navy shell */
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+
+    /* Cards: slightly lifted from bg */
+    --card: 217 33% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 217 33% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Emerald primary */
+    --primary: 160 84% 39%;
+    --primary-foreground: 210 40% 99%;
+
+    /* Muted navy panels */
+    --secondary: 217 33% 14%;
+    --secondary-foreground: 210 40% 92%;
+
+    --muted: 217 28% 16%;
+    --muted-foreground: 215 20% 62%;
+
+    /* Accent: teal-emerald hover surfaces */
+    --accent: 168 55% 18%;
+    --accent-foreground: 160 72% 88%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 28% 18%;
+    --input: 217 28% 18%;
+    --ring: 160 84% 45%;
+
+    --radius: 0.625rem;
+
+    /* Sidebar rail */
+    --sidebar: 222 47% 5%;
+    --sidebar-foreground: 210 35% 88%;
+    --sidebar-border: 217 30% 14%;
+    --sidebar-accent: 168 40% 14%;
+    --sidebar-accent-foreground: 160 72% 88%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* Tremor / Recharts: axis + grid readable on navy; do not inherit muted text into SVG fills */
+@layer components {
+  .dashboard-chart-shell .recharts-cartesian-grid line {
+    stroke: hsl(var(--border) / 0.55);
+  }
+  .dashboard-chart-shell .recharts-cartesian-axis-tick text {
+    fill: hsl(var(--muted-foreground));
+  }
+  .dashboard-chart-shell .recharts-legend-item-text {
+    fill: hsl(var(--muted-foreground)) !important;
+    color: hsl(var(--muted-foreground));
+  }
+}

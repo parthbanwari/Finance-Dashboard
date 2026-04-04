@@ -1,0 +1,131 @@
+import { useState } from "react";
+import { IndianRupee, LayoutDashboard, LineChart, LogOut, Menu, Settings } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { useAuth } from "@/contexts/auth-context";
+import { cn } from "@/lib/utils";
+
+const nav = [
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/transactions", label: "Transactions", icon: IndianRupee },
+  { to: "/analytics", label: "Analytics", icon: LineChart },
+  { to: "/settings", label: "Settings", icon: Settings },
+];
+
+function NavItems({ onNavigate }) {
+  return (
+    <nav className="flex flex-col gap-1 p-2">
+      {nav.map(({ to, label, icon: Icon }) => (
+        <NavLink
+          key={to}
+          to={to}
+          onClick={() => onNavigate?.()}
+          className={({ isActive }) =>
+            cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              isActive
+                ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                : "border-l-2 border-transparent text-sidebar-foreground/85 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+            )
+          }
+        >
+          <Icon className="size-4 shrink-0 text-primary/90" aria-hidden />
+          {label}
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
+
+export function AppSidebar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    navigate("/login", { replace: true });
+  }
+
+  return (
+    <>
+      <aside className="hidden w-60 shrink-0 border-r border-sidebar-border bg-sidebar md:flex md:flex-col">
+        <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-4">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+            <IndianRupee className="size-5" aria-hidden />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold tracking-tight text-foreground">Zorvyn</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {user?.username ?? "…"}
+            </p>
+          </div>
+        </div>
+        <NavItems />
+        <div className="mt-auto space-y-3 p-4">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full justify-start gap-2 border-sidebar-border"
+            onClick={handleLogout}
+          >
+            <LogOut className="size-4" />
+            Sign out
+          </Button>
+          <Separator className="bg-sidebar-border" />
+        </div>
+      </aside>
+
+      <div className="flex h-14 items-center border-b border-border bg-card px-4 md:hidden">
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="Open menu">
+              <Menu className="size-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent className="flex w-[min(100%,20rem)] flex-col bg-sidebar p-0">
+            <SheetHeader className="border-b border-sidebar-border px-4 py-4 text-left">
+              <div className="flex items-center gap-2">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <LayoutDashboard className="size-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold">Zorvyn Finance</p>
+                  <p className="truncate text-xs text-muted-foreground">{user?.username}</p>
+                </div>
+              </div>
+            </SheetHeader>
+            <NavItems onNavigate={() => setMobileOpen(false)} />
+            <div className="mt-auto border-t border-sidebar-border p-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-start gap-2"
+                onClick={() => {
+                  setMobileOpen(false);
+                  handleLogout();
+                }}
+              >
+                <LogOut className="size-4" />
+                Sign out
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+        <span className="ml-3 inline-flex items-center gap-1.5 text-sm font-semibold">
+          <IndianRupee className="size-4 text-primary" aria-hidden />
+          Finance Dashboard
+        </span>
+      </div>
+    </>
+  );
+}
