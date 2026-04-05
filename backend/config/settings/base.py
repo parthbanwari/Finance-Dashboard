@@ -166,11 +166,44 @@ DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Finance Dashboard <no
 OTP_LOGIN_TTL_SECONDS = int(os.environ.get("OTP_LOGIN_TTL_SECONDS", "600"))
 OTP_LOGIN_RATE_LIMIT_SECONDS = int(os.environ.get("OTP_LOGIN_RATE_LIMIT_SECONDS", "60"))
 
-CORS_ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
-    if origin.strip()
-]
+
+def _parse_origin_list(raw: str) -> list[str]:
+    """Comma-separated origins: strip whitespace and trailing slashes (CORS requires scheme+host, no path)."""
+    out: list[str] = []
+    for part in raw.split(","):
+        o = part.strip().rstrip("/")
+        if o:
+            out.append(o)
+    return out
+
+
+def _merge_unique(*groups: list[str]) -> list[str]:
+    seen: set[str] = set()
+    merged: list[str] = []
+    for group in groups:
+        for o in group:
+            if o not in seen:
+                seen.add(o)
+                merged.append(o)
+    return merged
+
+
+# Local Vite dev (always allowed so .env can omit them).
+_cors_local = _parse_origin_list("http://localhost:5173,http://127.0.0.1:5173")
+# Deployed frontend(s); override with CORS_DEPLOYED_DEFAULT_ORIGINS if needed (empty = use built-in).
+_deployed_raw = os.environ.get(
+    "CORS_DEPLOYED_DEFAULT_ORIGINS",
+    "https://finance-dashboard-frontend-fawn.vercel.app",
+)
+if not str(_deployed_raw).strip():
+    _deployed_raw = "https://finance-dashboard-frontend-fawn.vercel.app"
+_cors_deployed_defaults = _parse_origin_list(_deployed_raw)
+_cors_from_env = _parse_origin_list(os.environ.get("CORS_ALLOWED_ORIGINS", ""))
+
+CORS_ALLOWED_ORIGINS = _merge_unique(_cors_local, _cors_deployed_defaults, _cors_from_env)
+
+# Match browser origins for CSRF on HTTPS (admin, session cookies, etc.).
+CSRF_TRUSTED_ORIGINS = _merge_unique(_cors_local, _cors_deployed_defaults, _cors_from_env)
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Finance Dashboard API",
