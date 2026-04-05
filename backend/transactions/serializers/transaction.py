@@ -1,16 +1,19 @@
 from rest_framework import serializers
 
+from core.fields import ObjectIdStringField
 from transactions.models import Category, Transaction
 from transactions.serializers.category import CategorySerializer
 
 
 class TransactionSerializer(serializers.ModelSerializer):
+    id = ObjectIdStringField()
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
         source="category",
         write_only=True,
         required=False,
+        pk_field=serializers.CharField(),
     )
 
     class Meta:

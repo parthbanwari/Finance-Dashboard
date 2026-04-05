@@ -106,8 +106,8 @@ export function TransactionFormDialog({
       setFormError("Enter a positive amount.");
       return;
     }
-    const cat = Number.parseInt(categoryId, 10);
-    if (Number.isNaN(cat)) {
+    const cat = categoryId.trim();
+    if (!cat) {
       setFormError("Select a category.");
       return;
     }

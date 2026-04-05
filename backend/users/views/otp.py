@@ -18,8 +18,8 @@ class OtpSendView(APIView):
         tags=["Auth"],
         summary="Send sign-in OTP",
         description=(
-            "Sends a 6-digit code to the email if an **active** user exists with that address. "
-            "Response is the same whether or not the user exists (no account enumeration)."
+            "Creates an **active** user if the email is new, then sends a 6-digit sign-in code. "
+            "If the account exists but is **inactive**, no code is sent (response still generic)."
         ),
         request=OtpSendSerializer,
         responses={
@@ -53,7 +53,7 @@ class OtpSendView(APIView):
         resp = Response(
             {
                 "detail": (
-                    "If an account exists for this email, a sign-in code has been sent. "
+                    "If we could send email to this address, a sign-in code has been sent. "
                     "Check your inbox."
                 )
             },

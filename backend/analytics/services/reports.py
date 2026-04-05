@@ -24,6 +24,13 @@ def _dec(v) -> Decimal:
     return v if v is not None else Decimal("0")
 
 
+def _pk_json(value) -> str | None:
+    """MongoDB primary keys (ObjectId) must be JSON-friendly strings in dict payloads."""
+    if value is None:
+        return None
+    return str(value)
+
+
 def _month_to_iso(m: date | datetime | None) -> str | None:
     """TruncMonth returns datetime on some backends and date on others (e.g. SQLite)."""
     if m is None:
@@ -94,7 +101,7 @@ def build_category_breakdown(user, request):
         exp = _dec(r["total_expenses"])
         results.append(
             {
-                "category_id": r["category_id"],
+                "category_id": _pk_json(r["category_id"]),
                 "category_name": r["category__name"] or "",
                 "total_income": str(inc),
                 "total_expenses": str(exp),

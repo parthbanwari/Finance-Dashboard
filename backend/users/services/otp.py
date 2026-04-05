@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.mail import send_mail
+from django.db import IntegrityError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,34 @@ def _rate_key(email: str) -> str:
     return f"otp:ratelimit:{_norm_email(email)}"
 
 
+def _get_or_create_active_user_for_otp(normalized: str):
+    """
+    Return an active User for this email, creating one if needed (passwordless / OTP-only).
+    Returns None if an inactive account already exists for this email.
+    """
+    User = get_user_model()
+    user = User.objects.filter(email__iexact=normalized).first()
+    if user:
+        return user if user.is_active else None
+
+    # Username max_length is 150; keep unique if another user already took this prefix.
+    username = normalized[:150]
+    if User.objects.filter(username__iexact=username).exclude(email__iexact=normalized).exists():
+        suffix = f"_otp_{secrets.token_hex(4)}"
+        username = f"{normalized[: 150 - len(suffix)]}{suffix}"
+
+    try:
+        user = User(username=username, email=normalized, is_active=True)
+        user.set_unusable_password()
+        user.save()
+        return user
+    except IntegrityError:
+        user = User.objects.filter(email__iexact=normalized).first()
+        if user and user.is_active:
+            return user
+        return None
+
+
 def issue_tokens_for_user(user) -> dict[str, str]:
     """Same shape as SimpleJWT token endpoint; access payload includes `role`."""
     refresh = RefreshToken.for_user(user)
@@ -42,8 +71,9 @@ def issue_tokens_for_user(user) -> dict[str, str]:
 
 def send_login_otp(email: str) -> tuple[bool, str | None]:
     """
-    Send a 6-digit OTP to the user's email if an active account exists.
-    Returns (ok, error_message). On missing user, ok is True (generic response; no enumeration).
+    Ensure an active user exists for this email (create if new), then send a 6-digit OTP.
+    Inactive existing accounts get no email (same as before; no OTP for disabled users).
+    Returns (ok, error_message).
     """
     normalized = _norm_email(email)
     if not normalized:
@@ -52,9 +82,8 @@ def send_login_otp(email: str) -> tuple[bool, str | None]:
     if cache.get(_rate_key(normalized)):
         return False, "Please wait a minute before requesting another code."
 
-    User = get_user_model()
-    user = User.objects.filter(email__iexact=normalized).first()
-    if not user or not user.is_active:
+    user = _get_or_create_active_user_for_otp(normalized)
+    if user is None:
         cache.set(_rate_key(normalized), True, RATE_LIMIT_TTL)
         return True, None
 

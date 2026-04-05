@@ -37,9 +37,8 @@ export function useTransactions(initialPage = 1, pageSize = 25) {
     };
     if (filters.dateFrom) p.date_from = filters.dateFrom;
     if (filters.dateTo) p.date_to = filters.dateTo;
-    if (filters.categoryId) {
-      const id = Number.parseInt(filters.categoryId, 10);
-      if (!Number.isNaN(id)) p.category = id;
+    if (filters.categoryId?.trim()) {
+      p.category = filters.categoryId.trim();
     }
     if (filters.type === "income" || filters.type === "expense") {
       p.type = filters.type;

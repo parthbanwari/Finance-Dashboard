@@ -20,12 +20,13 @@ DEBUG = False
 ALLOWED_HOSTS: list[str] = []
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
+    "config.mongo_apps.MongoAdminConfig",
+    "config.mongo_apps.MongoAuthConfig",
+    "config.mongo_apps.MongoContentTypesConfig",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_mongodb_backend",
     "django_filters",
     "rest_framework",
     "rest_framework_simplejwt",
@@ -68,20 +69,43 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+# MongoDB (django-mongodb-backend). Set MONGODB_URI to a full URI, e.g.:
+#   mongodb://127.0.0.1:27017/finance_dashboard
+#   mongodb+srv://user:pass@cluster.xxxxx.mongodb.net/finance_dashboard?retryWrites=true&w=majority
+# If NAME is empty, the database name is taken from the URI path.
+_mongodb_uri = os.environ.get(
+    "MONGODB_URI",
+    "mongodb://127.0.0.1:27017/finance_dashboard",
+)
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": os.environ.get("DB_NAME", "finance_dashboard"),
-        "USER": os.environ.get("DB_USER", "root"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-        "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
-        "PORT": os.environ.get("DB_PORT", "3306"),
-        "OPTIONS": {
-            "charset": "utf8mb4",
-            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+        "ENGINE": "django_mongodb_backend",
+        "NAME": os.environ.get("MONGODB_NAME", ""),
+        "HOST": _mongodb_uri,
+        "OPTIONS": {},
     }
 }
+
+# Use cache-backed sessions so django.contrib.sessions does not require SQL/relational migrations.
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
+
+# Set DJANGO_USE_DUMMY_DB=1 to run makemigrations without a live MongoDB (dummy engine skips DB history checks).
+if os.environ.get("DJANGO_USE_DUMMY_DB", "").lower() in ("1", "true", "yes"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.dummy",
+        }
+    }
+
+# Contrib apps ship SQL migrations; MongoDB uses replacement migration packages.
+MIGRATION_MODULES = {
+    "admin": "mongo_migrations.admin",
+    "auth": "mongo_migrations.auth",
+    "contenttypes": "mongo_migrations.contenttypes",
+}
+
+DATABASE_ROUTERS = ["django_mongodb_backend.routers.MongoRouter"]
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -96,7 +120,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DEFAULT_AUTO_FIELD = "django_mongodb_backend.fields.ObjectIdAutoField"
 
 AUTH_USER_MODEL = "users.User"
 

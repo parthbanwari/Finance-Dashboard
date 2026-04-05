@@ -10,7 +10,18 @@ from __future__ import annotations
 
 from typing import Any
 
+from bson import ObjectId
 from rest_framework.renderers import JSONRenderer
+from rest_framework.utils import encoders as rf_encoders
+
+
+class MongoJSONEncoder(rf_encoders.JSONEncoder):
+    """Extends DRF JSONEncoder so MongoDB ObjectId (and similar) serialize to strings."""
+
+    def default(self, obj):
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        return super().default(obj)
 
 
 def _should_skip_envelope(request, path: str) -> bool:
@@ -74,6 +85,7 @@ class EnvelopeJSONRenderer(JSONRenderer):
 
     charset = "utf-8"
     format = "json"
+    encoder_class = MongoJSONEncoder
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
         renderer_context = renderer_context or {}

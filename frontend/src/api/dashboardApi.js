@@ -16,7 +16,7 @@ import { apiClient } from "@/api/client";
 
 /**
  * @typedef {Object} CategoryBreakdownRow
- * @property {number|null} category_id
+ * @property {string|null} category_id
  * @property {string} category_name
  * @property {string} total_income
  * @property {string} total_expenses

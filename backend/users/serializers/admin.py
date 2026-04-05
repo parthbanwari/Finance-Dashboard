@@ -1,10 +1,13 @@
 from rest_framework import serializers
 
+from core.fields import ObjectIdStringField
 from users.models import User
 
 
 class UserAdminSerializer(serializers.ModelSerializer):
     """Admin-only: read/update users (role, active flag)."""
+
+    id = ObjectIdStringField()
 
     class Meta:
         model = User

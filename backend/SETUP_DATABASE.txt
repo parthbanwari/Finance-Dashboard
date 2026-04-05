@@ -1,87 +1,27 @@
 ================================================================================
-MySQL setup for this project (fixes "Unknown column ... type" and
-"Table ... transactions_category doesn't exist")
+MongoDB setup for this Django project (django-mongodb-backend)
 ================================================================================
 
-These errors mean the MySQL database schema does NOT match Django migrations.
+1) Run MongoDB locally (e.g. mongod on 127.0.0.1:27017) or use MongoDB Atlas.
 
-COMMON CASE (legacy table)
----------------------------
-If you see ONLY "transactions_transaction" in MySQL but NOT "transactions_category",
-and columns like "occurred_at" or a plain "category" field, that is an OLD schema
-from another project or an early experiment. Django's current models require:
-  - transactions_category
-  - transactions_transaction with category_id, transaction_date, type, deleted_at, ...
+2) In backend/.env set:
+   MONGODB_URI=mongodb://127.0.0.1:27017/finance_dashboard
+   (Atlas: mongodb+srv://USER:PASS@cluster.../finance_dashboard?retryWrites=true&w=majority)
+   MONGODB_NAME=          # optional; leave empty to use the DB name from the URI path
 
-If you see "Unknown column ... deleted_at", the table predates soft-delete; run
-  python manage.py migrate
-to apply repair migration 0004, or reset the DB per OPTION A above.
-
-If you see "Unknown column ... category_id" on analytics/category-breakdown, your
-`transactions_transaction` table was still using legacy `category` / `occurred_at`
-columns, or an earlier repair no-op'd due to MySQL metadata quirks. Run:
-  python manage.py migrate
-to apply repair migrations 0006 and 0008 (0008 uses SHOW COLUMNS and is more
-reliable). Rows may be deleted when legacy columns must be replaced — recreate
-data afterward.
-
-Running "migrate" alone will NOT reliably alter that legacy table into the new shape.
-You must DROP the database (or drop those tables), then run migrate on an empty DB.
-
-Run:  python manage.py db_status
-It will print ERROR lines if legacy schema is detected.
-
-OTHER CASES
------------
-Migrations were never run against MySQL, or the database was partially created by hand.
-
-REQUIRED STEPS
---------------
-1) MySQL Server must be running (local or remote).
-
-2) Create a database user if needed. The app expects (see .env):
-   - DB_NAME=finance_dashboard
-   - DB_USER / DB_PASSWORD / DB_HOST / DB_PORT
-
-3) From the "backend" folder, with the virtual environment activated:
-
-     python manage.py db_status
-
-   Check that:
-   - ENGINE points to django.db.backends.mysql
-   - NAME is finance_dashboard (or whatever you set in .env)
-   - You see tables: transactions_category, transactions_transaction
-   - transactions_transaction includes column: type
-
-4) Apply all migrations:
+3) From the backend folder, with the virtual environment activated:
 
      python manage.py migrate
 
-5) If errors persist OR db_status shows missing tables/columns:
-
-   OPTION A — Fresh empty database (OK if you have no data to keep)
-   - Run scripts/reset_mysql_database.sql with the mysql client, OR in MySQL:
-
-       DROP DATABASE IF EXISTS finance_dashboard;
-       CREATE DATABASE finance_dashboard CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-   - Then run again:
-
-       python manage.py migrate
-
-   OPTION B — You already have important data
-   - Back up first, then ask for a proper migration path; do not drop the DB.
-
-6) Create users / seed data as needed, e.g.:
+4) Create an admin user if needed:
 
      python manage.py createsuperuser
 
-VERIFY
-------
-     python manage.py db_status
-     python manage.py showmigrations
+5) To generate new migrations when MongoDB is not running (optional):
 
-All apps should show [X] for migrations. API calls should return HTTP 200 with
-empty lists/zero totals when there is no data (not 500).
+     set DJANGO_USE_DUMMY_DB=1
+     python manage.py makemigrations
+
+   Unset DJANGO_USE_DUMMY_DB before migrate or runserver.
 
 ================================================================================

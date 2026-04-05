@@ -1,6 +1,5 @@
 """
-Print database connection info and whether core tables exist.
-Use this when debugging "Unknown column" / "Table doesn't exist" on MySQL.
+Print database connection info and whether core tables/collections exist.
 
 Run: python manage.py db_status
 """
@@ -10,7 +9,7 @@ from django.db import connection
 
 
 class Command(BaseCommand):
-    help = "Show DB engine, database name, and transactions_* tables (MySQL/SQLite/Postgres)."
+    help = "Show DB engine, database name, and transactions_* tables or collections."
 
     def handle(self, *args, **options):
         cfg = connection.settings_dict
@@ -20,6 +19,30 @@ class Command(BaseCommand):
         self.stdout.write("")
 
         vendor = connection.vendor
+        if vendor == "mongodb":
+            db = connection.database
+            self.stdout.write(f"MongoDB database: {db.name!r}")
+            names = [doc["name"] for doc in db.list_collections()]
+            tx = sorted(n for n in names if str(n).startswith("transactions_"))
+            self.stdout.write(f"Collections matching 'transactions_*': {len(tx)}")
+            for name in tx:
+                self.stdout.write(f"  - {name}")
+            need = {"transactions_category", "transactions_transaction"}
+            missing = need - set(tx)
+            if missing:
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"MISSING COLLECTIONS (after migrate): {sorted(missing)}"
+                    )
+                )
+            self.stdout.write("")
+            self.stdout.write(
+                self.style.WARNING(
+                    "If collections are missing, run: python manage.py migrate"
+                )
+            )
+            return
+
         with connection.cursor() as cursor:
             if vendor == "mysql":
                 cursor.execute("SELECT DATABASE()")
