@@ -120,6 +120,8 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+# Collected into this directory in production (`collectstatic`) for WhiteNoise.
+STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django_mongodb_backend.fields.ObjectIdAutoField"
 
 AUTH_USER_MODEL = "users.User"

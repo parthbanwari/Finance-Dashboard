@@ -24,4 +24,11 @@ MongoDB setup for this Django project (django-mongodb-backend)
 
    Unset DJANGO_USE_DUMMY_DB before migrate or runserver.
 
+Production (Render, etc.): Django admin CSS requires static files collected at build:
+
+     pip install -r requirements.txt
+     DJANGO_SETTINGS_MODULE=config.settings.prod python manage.py collectstatic --noinput
+
+Include collectstatic in the Render build command before starting Gunicorn.
+
 ================================================================================
