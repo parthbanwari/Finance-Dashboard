@@ -7,6 +7,7 @@ import { LoginPage } from "@/features/auth/login-page";
 import { AnalyticsPage } from "@/features/analytics/analytics-page";
 import { DashboardPage } from "@/features/dashboard/dashboard-page";
 import { SettingsPage } from "@/features/settings/settings-page";
+import { TeamPage } from "@/features/settings/team-page";
 import { TransactionsPage } from "@/features/transactions/transactions-page";
 
 export function AppRouter() {
@@ -16,6 +17,7 @@ export function AppRouter() {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/settings/team" element={<TeamPage />} />
           <Route element={<DashboardDataProvider />}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />

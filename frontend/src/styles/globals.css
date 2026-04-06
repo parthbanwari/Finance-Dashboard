@@ -2,6 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
+/* react-day-picker — align with Deep Navy & Emerald theme */
+@layer components {
+  .rdp-root {
+    --rdp-accent-color: hsl(var(--primary));
+    --rdp-accent-background-color: hsl(var(--accent) / 0.55);
+    --rdp-today-color: hsl(var(--primary));
+    --rdp-outside-opacity: 0.45;
+    border-radius: var(--radius);
+    font-family: inherit;
+    color: hsl(var(--foreground));
+    background-color: transparent;
+  }
+
+  .rdp-root .rdp-nav {
+    gap: 0.25rem;
+  }
+
+  .rdp-root .rdp-button_previous,
+  .rdp-root .rdp-button_next {
+    border-radius: calc(var(--radius) - 2px);
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--secondary) / 0.6);
+    color: hsl(var(--foreground));
+  }
+
+  .rdp-root .rdp-button_previous:hover,
+  .rdp-root .rdp-button_next:hover {
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+  }
+
+  .rdp-root .rdp-button_previous:hover:not([disabled]),
+  .rdp-root .rdp-button_next:hover:not([disabled]) {
+    border-color: hsl(var(--ring) / 0.45);
+  }
+
+  .rdp-root .rdp-month_caption {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: hsl(var(--foreground));
+  }
+
+  .rdp-root .rdp-weekday {
+    color: hsl(var(--muted-foreground));
+    opacity: 1;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .rdp-root .rdp-day_button {
+    border-radius: calc(var(--radius) - 2px);
+  }
+
+  .rdp-root .rdp-selected .rdp-day_button {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border-color: hsl(var(--primary));
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+
+  .rdp-root .rdp-today:not(.rdp-outside) .rdp-day_button {
+    border-color: hsl(var(--primary) / 0.55);
+  }
+
+  .rdp-root .rdp-month_grid {
+    border-radius: calc(var(--radius) - 4px);
+  }
+}
+
 /**
  * Deep Navy & Emerald — shadcn-compatible HSL tokens.
  * Navy: cool dark base; Emerald: primary accent for CTAs & positive money flow.
@@ -68,11 +139,29 @@
   .dashboard-chart-shell .recharts-cartesian-grid line {
     stroke: hsl(var(--border) / 0.55);
   }
-  .dashboard-chart-shell .recharts-cartesian-axis-tick text {
+
+  /* Y-axis: compact currency ticks; nowrap keeps "Rs 27,000" on one baseline */
+  .dashboard-chart-shell .recharts-yAxis .recharts-cartesian-axis-tick text {
     fill: hsl(var(--muted-foreground));
+    font-size: 0.65rem;
+    font-weight: 500;
+    white-space: nowrap;
   }
+
+  /* X-axis: match scale; extra room avoids overlap with bottom Y tick */
+  .dashboard-chart-shell .recharts-xAxis .recharts-cartesian-axis-tick text {
+    fill: hsl(var(--muted-foreground));
+    font-size: 0.65rem;
+    font-weight: 400;
+  }
+
   .dashboard-chart-shell .recharts-legend-item-text {
     fill: hsl(var(--muted-foreground)) !important;
     color: hsl(var(--muted-foreground));
+  }
+
+  /* Donut/pie center total (Tremor default fill is too dark on navy cards) */
+  .category-donut-chart .recharts-wrapper text[text-anchor="middle"][dominant-baseline="middle"] {
+    fill: hsl(var(--foreground)) !important;
   }
 }

@@ -6,9 +6,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# override=True: values in .env must win over empty/mistaken vars in the process env (Windows shells).
+load_dotenv(BASE_DIR / ".env", override=True)
 
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
@@ -145,7 +145,7 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": False,
 }
 
-# Cache (OTP codes, rate limits). Use Redis in production: set CACHES via env / prod settings.
+# Cache (sessions). Use Redis in production: set CACHES via env / prod settings.
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -153,20 +153,35 @@ CACHES = {
     }
 }
 
-# Email — console backend logs messages to stdout in dev; set SMTP in .env for production.
-EMAIL_BACKEND = os.environ.get(
-    "EMAIL_BACKEND",
-    "django.core.mail.backends.console.EmailBackend",
-)
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+# Email — console in dev by default; set EMAIL_HOST + EMAIL_HOST_PASSWORD (e.g. Resend) to use SMTP.
+# See backend/EMAIL_SETUP.txt for provider steps.
+_email_backend_env = os.environ.get("EMAIL_BACKEND", "").strip()
+_smtp_ready = bool(os.environ.get("EMAIL_HOST", "").strip() and os.environ.get("EMAIL_HOST_PASSWORD", "").strip())
+if _email_backend_env:
+    EMAIL_BACKEND = _email_backend_env
+elif _smtp_ready:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "").strip()
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() in ("1", "true", "yes")
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Finance Dashboard <noreply@localhost>")
+# Port 465 uses implicit SSL (set EMAIL_USE_SSL=true and usually EMAIL_USE_TLS=false).
+EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "false").lower() in ("1", "true", "yes")
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "").strip()
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "").strip()
+EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "15"))
+_default_from_email = os.environ.get("DEFAULT_FROM_EMAIL", "Finance Dashboard <noreply@localhost>").strip()
+if len(_default_from_email) >= 2 and _default_from_email[0] in '"\'' and _default_from_email[-1] == _default_from_email[0]:
+    _default_from_email = _default_from_email[1:-1].strip()
+DEFAULT_FROM_EMAIL = _default_from_email
 
-OTP_LOGIN_TTL_SECONDS = int(os.environ.get("OTP_LOGIN_TTL_SECONDS", "600"))
-OTP_LOGIN_RATE_LIMIT_SECONDS = int(os.environ.get("OTP_LOGIN_RATE_LIMIT_SECONDS", "60"))
+# Shared password for demo / assessment login (email + this password → JWT). Set in .env.
+DEMO_LOGIN_PASSWORD = os.environ.get("DEMO_LOGIN_PASSWORD", "").strip()
+
+# Passwordless JWT for this exact admin email only (empty password on token endpoint).
+ADMIN_DEMO_EMAIL = os.environ.get("ADMIN_DEMO_EMAIL", "admin@demo.finance").strip().lower()
 
 
 def _parse_origin_list(raw: str) -> list[str]:
@@ -220,7 +235,7 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": "/api/v1",
     "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
     "TAGS": [
-        {"name": "Auth", "description": "Email OTP sign-in, JWT obtain/refresh, and token refresh."},
+        {"name": "Auth", "description": "JWT obtain (email + demo password) and token refresh."},
         {"name": "Users", "description": "Current user profile (`/me`) and admin-only user directory."},
         {"name": "Transactions", "description": "Transaction categories and ledger lines (scoped per user)."},
         {"name": "Analytics", "description": "Aggregated KPIs, trends, and recent activity."},

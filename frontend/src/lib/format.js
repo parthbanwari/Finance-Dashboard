@@ -1,7 +1,7 @@
-/** All amounts are shown in Indian Rupees (₹) in the UI. */
+/** Indian Rupees (INR) only — no other currencies in this app. */
 export const APP_CURRENCY = "INR";
 
-/** Digits only (en-IN grouping). Pair with `RupeeIcon` in components to avoid duplicate ₹. */
+/** Digits only (en-IN grouping). Pair with `RupeeIcon` for ₹ in the UI. */
 export function formatMoney(amount) {
   const n = typeof amount === "string" ? Number.parseFloat(amount) : amount;
   if (Number.isNaN(n)) return "—";
@@ -11,14 +11,16 @@ export function formatMoney(amount) {
   }).format(n);
 }
 
-/** Tremor charts (string-only tooltips; uses ₹ via Intl — icons are not available in chart labels). */
+/** Charts / tooltips: "Rs" + compact number (no $ or foreign symbols). */
 export function formatRupeesCompact(value) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: APP_CURRENCY,
-    maximumFractionDigits: value >= 100000 ? 0 : 2,
+  const n = typeof value === "number" ? value : Number(value);
+  if (Number.isNaN(n)) return "—";
+  const formatted = new Intl.NumberFormat("en-IN", {
+    maximumFractionDigits: Math.abs(n) >= 100000 ? 0 : 2,
     minimumFractionDigits: 0,
-  }).format(value);
+  }).format(n);
+  /* Non-breaking space keeps "Rs" + amount on one line in charts and tight UI. */
+  return `Rs\u00A0${formatted}`;
 }
 
 export function formatSignedTransaction(t) {

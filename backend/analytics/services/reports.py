@@ -150,6 +150,47 @@ def build_monthly_trends(user, request):
     }
 
 
+def _chart_point_label(d: date, day_sequence: int) -> str:
+    """Short x-axis label; disambiguate multiple txs on the same calendar day."""
+    base = d.strftime("%d %b %Y")
+    if day_sequence > 1:
+        return f"{base} ({day_sequence})"
+    return base
+
+
+def build_running_balance_series(user, request):
+    """
+    One row per transaction in chronological order (date, then id), with cumulative
+    running balance after each line. Uses signed amounts: income adds, expense subtracts.
+    """
+    qs = filtered_transactions(user, request).order_by("transaction_date", "id")
+    running = Decimal("0")
+    results = []
+    per_day: dict[date, int] = {}
+    for tx in qs.iterator(chunk_size=500):
+        running += tx.signed_amount
+        d = tx.transaction_date
+        per_day[d] = per_day.get(d, 0) + 1
+        seq = per_day[d]
+        delta = tx.signed_amount
+        results.append(
+            {
+                "transaction_id": _pk_json(tx.pk),
+                "transaction_date": d.isoformat(),
+                "sequence": seq,
+                "type": tx.type,
+                "delta": str(delta),
+                "running_balance": str(running),
+                "label": _chart_point_label(d, seq),
+            }
+        )
+    return {
+        "results": results,
+        "point_count": len(results),
+        "filters_applied": _filters_payload(request),
+    }
+
+
 def build_recent_transactions(user, request, limit: int):
     """
     Latest rows by business date — one query with JOIN to category (select_related).

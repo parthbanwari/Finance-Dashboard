@@ -50,6 +50,17 @@ RecentTransactionsResponseSchema = inline_serializer(
     },
 )
 
+RunningBalanceSeriesResponseSchema = inline_serializer(
+    name="RunningBalanceSeriesResponse",
+    fields={
+        "results": serializers.JSONField(
+            help_text="Per transaction: label, running_balance, delta, type, transaction_date, …"
+        ),
+        "point_count": serializers.IntegerField(),
+        "filters_applied": serializers.JSONField(),
+    },
+)
+
 StandardErrorSchema = inline_serializer(
     name="StandardError",
     fields={

@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { IndianRupee, LayoutDashboard, LineChart, LogOut, Menu, Settings } from "lucide-react";
+import {
+  IndianRupee,
+  LayoutDashboard,
+  LineChart,
+  LogOut,
+  Menu,
+  Settings,
+  Users,
+} from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -13,14 +21,27 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 
-const nav = [
+const baseNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/transactions", label: "Transactions", icon: IndianRupee },
   { to: "/analytics", label: "Analytics", icon: LineChart },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
-function NavItems({ onNavigate }) {
+function navForRole(role) {
+  if (role === "admin") {
+    const out = [...baseNav];
+    const idx = out.findIndex((o) => o.to === "/settings");
+    if (idx >= 0) {
+      out.splice(idx, 0, { to: "/settings/team", label: "Team", icon: Users });
+    }
+    return out;
+  }
+  return baseNav;
+}
+
+function NavItems({ onNavigate, role }) {
+  const nav = navForRole(role);
   return (
     <nav className="flex flex-col gap-1 p-2">
       {nav.map(({ to, label, icon: Icon }) => (
@@ -52,7 +73,7 @@ export function AppSidebar() {
 
   function handleLogout() {
     logout();
-    navigate("/login", { replace: true });
+    navigate("/login", { replace: true, state: {} });
   }
 
   return (
@@ -63,13 +84,13 @@ export function AppSidebar() {
             <IndianRupee className="size-5" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold tracking-tight text-foreground">Zorvyn</p>
-            <p className="truncate text-xs text-muted-foreground">
-              {user?.username ?? "…"}
+            <p className="text-sm font-semibold tracking-tight text-foreground">Fincance Tracker</p>
+            <p className="truncate text-xs text-muted-foreground" title={user?.email ?? user?.username}>
+              {user?.email ?? user?.username ?? "…"}
             </p>
           </div>
         </div>
-        <NavItems />
+        <NavItems role={user?.role} />
         <div className="mt-auto space-y-3 p-4">
           <Button
             type="button"
@@ -100,11 +121,13 @@ export function AppSidebar() {
                 </div>
                 <div className="min-w-0">
                   <p className="font-semibold">Zorvyn Finance</p>
-                  <p className="truncate text-xs text-muted-foreground">{user?.username}</p>
+                  <p className="truncate text-xs text-muted-foreground" title={user?.email ?? user?.username}>
+                    {user?.email ?? user?.username}
+                  </p>
                 </div>
               </div>
             </SheetHeader>
-            <NavItems onNavigate={() => setMobileOpen(false)} />
+            <NavItems onNavigate={() => setMobileOpen(false)} role={user?.role} />
             <div className="mt-auto border-t border-sidebar-border p-4">
               <Button
                 type="button"

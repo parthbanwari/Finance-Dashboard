@@ -39,15 +39,10 @@ export function AuthProvider({ children }) {
     void refreshUser().finally(() => setLoading(false));
   }, [refreshUser]);
 
-  const requestOtp = useCallback(async (email) => {
-    setError(null);
-    return userApi.requestOtp(email.trim());
-  }, []);
-
-  const verifyOtp = useCallback(async (email, otp) => {
+  const login = useCallback(async (email, password) => {
     setError(null);
     try {
-      const tokens = await userApi.verifyOtp(email.trim(), otp.trim());
+      const tokens = await userApi.login(email.trim(), password);
       localStorage.setItem("access_token", tokens.access);
       localStorage.setItem("refresh_token", tokens.refresh);
       const me = await userApi.getMe();
@@ -70,12 +65,11 @@ export function AuthProvider({ children }) {
       user,
       loading,
       error,
-      requestOtp,
-      verifyOtp,
+      login,
       logout,
       refreshUser,
     }),
-    [user, loading, error, requestOtp, verifyOtp, logout, refreshUser],
+    [user, loading, error, login, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

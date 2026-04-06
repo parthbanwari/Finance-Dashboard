@@ -79,6 +79,18 @@ export async function getMonthlyTrends(params) {
   return data;
 }
 
+/**
+ * Per-transaction running balance (chronological) for cash-flow charts.
+ * @param {AnalyticsFiltersQuery} [params]
+ */
+export async function getRunningBalanceSeries(params) {
+  const { data } = await apiClient.get(
+    "/analytics/summary/running-balance-series/",
+    { params },
+  );
+  return data;
+}
+
 /** @param {AnalyticsFiltersQuery & { limit?: number }} [params] */
 export async function getRecentTransactions(params) {
   const { data } = await apiClient.get(

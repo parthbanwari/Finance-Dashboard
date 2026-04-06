@@ -10,6 +10,7 @@ from core.openapi import (
     CategoryBreakdownResponseSchema,
     MonthlyTrendsResponseSchema,
     RecentTransactionsResponseSchema,
+    RunningBalanceSeriesResponseSchema,
     StandardErrorSchema,
 )
 from users.permissions import IsAnalystOrAdminForAnalytics
@@ -19,6 +20,7 @@ from analytics.services.reports import (
     build_category_breakdown,
     build_monthly_trends,
     build_recent_transactions,
+    build_running_balance_series,
     build_summary,
 )
 
@@ -39,7 +41,7 @@ ANALYTICS_FILTERS = [
         "currency",
         OpenApiTypes.STR,
         OpenApiParameter.QUERY,
-        description="Restrict to one ISO 4217 currency code (e.g. USD).",
+        description="Restrict to one ISO 4217 currency code (this app uses INR / Rs only).",
     ),
 ]
 
@@ -114,6 +116,31 @@ class MonthlyTrendsView(EnvelopeMessageMixin, APIView):
 
     def get(self, request):
         return Response(build_monthly_trends(request.user, request))
+
+
+@extend_schema(
+    tags=["Analytics"],
+    summary="Running balance series (every transaction)",
+    description=(
+        "**Analyst or Admin.** Chronological list of transactions with cumulative **running_balance** "
+        "after each row (income increases, expenses decrease). Same filters as other analytics. "
+        "Use for cash-flow charts that step on every income/expense."
+    ),
+    parameters=ANALYTICS_FILTERS,
+    responses={
+        200: OpenApiResponse(response=RunningBalanceSeriesResponseSchema),
+        401: OpenApiResponse(response=StandardErrorSchema),
+        403: OpenApiResponse(response=StandardErrorSchema),
+    },
+)
+class RunningBalanceSeriesView(EnvelopeMessageMixin, APIView):
+    permission_classes = [IsAuthenticated, IsAnalystOrAdminForAnalytics]
+
+    def get_envelope_success_message(self):
+        return "Running balance series retrieved successfully."
+
+    def get(self, request):
+        return Response(build_running_balance_series(request.user, request))
 
 
 @extend_schema(

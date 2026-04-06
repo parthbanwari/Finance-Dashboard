@@ -4,6 +4,7 @@ from analytics.views import (
     CategoryBreakdownView,
     MonthlyTrendsView,
     RecentTransactionsView,
+    RunningBalanceSeriesView,
     SummaryView,
 )
 
@@ -13,6 +14,11 @@ urlpatterns = [
         "summary/category-breakdown/",
         CategoryBreakdownView.as_view(),
         name="analytics-category-breakdown",
+    ),
+    path(
+        "summary/running-balance-series/",
+        RunningBalanceSeriesView.as_view(),
+        name="analytics-running-balance-series",
     ),
     path(
         "summary/monthly-trends/",

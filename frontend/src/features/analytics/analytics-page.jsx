@@ -14,7 +14,7 @@ import { CategoryExpensePieChart } from "@/features/dashboard/components/categor
 import { MonthlyCashFlowChart } from "@/features/dashboard/components/monthly-cash-flow-chart";
 import {
   mapCategoryBreakdownToPieData,
-  mapMonthlyTrendsToNetLineData,
+  mapRunningBalanceSeriesToChartData,
 } from "@/features/dashboard/lib/map-analytics-charts";
 
 export function AnalyticsPage() {
@@ -22,7 +22,7 @@ export function AnalyticsPage() {
     loading,
     error,
     categoryBreakdown,
-    monthlyTrends,
+    runningBalanceSeries,
     analyticsForbidden,
   } = useDashboardData();
 
@@ -32,8 +32,8 @@ export function AnalyticsPage() {
   );
 
   const netLineData = useMemo(
-    () => mapMonthlyTrendsToNetLineData(monthlyTrends),
-    [monthlyTrends],
+    () => mapRunningBalanceSeriesToChartData(runningBalanceSeries),
+    [runningBalanceSeries],
   );
 
   return (
@@ -76,9 +76,9 @@ export function AnalyticsPage() {
 
           <Card className="border-border/80 bg-card/95 shadow-md ring-1 ring-primary/5">
             <CardHeader>
-              <CardTitle className="text-base">Monthly trends</CardTitle>
+              <CardTitle className="text-base">Running balance</CardTitle>
               <CardDescription>
-                Each point is income minus spending for that month (e.g. ₹25,000 − ₹10,000 = ₹15,000).
+                Cumulative balance after each transaction in the filtered period (chronological order).
               </CardDescription>
             </CardHeader>
             <CardContent>

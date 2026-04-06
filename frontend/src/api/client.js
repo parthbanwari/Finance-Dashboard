@@ -54,8 +54,7 @@ apiClient.interceptors.response.use(
       error.response?.status === 401 &&
       original &&
       !original._retry &&
-      !original.url?.includes("/auth/token/") &&
-      !original.url?.includes("/auth/otp/")
+      !original.url?.includes("/auth/token/")
     ) {
       original._retry = true;
       if (!refreshPromise) {

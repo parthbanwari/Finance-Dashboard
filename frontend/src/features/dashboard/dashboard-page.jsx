@@ -16,7 +16,7 @@ import { MonthlyCashFlowChart } from "@/features/dashboard/components/monthly-ca
 import { RecentTransactionsTable } from "@/features/dashboard/components/recent-transactions-table";
 import {
   mapCategoryBreakdownToPieData,
-  mapMonthlyTrendsToNetLineData,
+  mapRunningBalanceSeriesToChartData,
 } from "@/features/dashboard/lib/map-analytics-charts";
 
 export function DashboardPage() {
@@ -25,12 +25,9 @@ export function DashboardPage() {
     error,
     summary,
     categoryBreakdown,
-    monthlyTrends,
+    runningBalanceSeries,
     recent,
     analyticsForbidden,
-    selectedCurrency,
-    setSelectedCurrency,
-    availableCurrencies,
   } = useDashboardData();
 
   const pieData = useMemo(
@@ -39,8 +36,8 @@ export function DashboardPage() {
   );
 
   const netLineData = useMemo(
-    () => mapMonthlyTrendsToNetLineData(monthlyTrends),
-    [monthlyTrends],
+    () => mapRunningBalanceSeriesToChartData(runningBalanceSeries),
+    [runningBalanceSeries],
   );
 
   return (
@@ -57,14 +54,7 @@ export function DashboardPage() {
       {error ? <ErrorBlock message={error} /> : null}
 
       {!error ? (
-        <KpiCards
-          summary={summary}
-          selectedCurrency={selectedCurrency}
-          onSelectCurrency={setSelectedCurrency}
-          availableCurrencies={availableCurrencies}
-          analyticsForbidden={analyticsForbidden}
-          loading={loading}
-        />
+        <KpiCards summary={summary} analyticsForbidden={analyticsForbidden} loading={loading} />
       ) : null}
 
       {!error && loading ? (
@@ -77,7 +67,7 @@ export function DashboardPage() {
             <CardHeader>
               <CardTitle className="text-base">Expenses by category</CardTitle>
               <CardDescription>
-                Share of expense by category for the filtered period (pie = total expenses in center).
+                Share of expense by category for the filtered period.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -94,17 +84,17 @@ export function DashboardPage() {
 
           <Card className="border-border/80 bg-card/95 shadow-md ring-1 ring-primary/5">
             <CardHeader>
-              <CardTitle className="text-base">Monthly cash flow</CardTitle>
+              <CardTitle className="text-base">Running balance</CardTitle>
               <CardDescription>
-                One line per month: money in minus money out (e.g. ₹25,000 stipend − ₹10,000 spending →
-                ₹15,000).
+                One point per transaction in date order: balance updates after each income and
+                expense in the filtered period.
               </CardDescription>
             </CardHeader>
             <CardContent>
               {netLineData.length ? (
                 <MonthlyCashFlowChart data={netLineData} />
               ) : (
-                <EmptyBlock title="No monthly data" description="Try a wider date range." />
+                <EmptyBlock title="No transactions" description="Try a wider date range." />
               )}
             </CardContent>
           </Card>
@@ -125,7 +115,7 @@ export function DashboardPage() {
             <CardDescription>
               {analyticsForbidden
                 ? "Latest rows from your transaction list."
-                : "Latest rows from analytics (same filters as charts)."}
+                : "Latest rows from analytics."}
             </CardDescription>
           </CardHeader>
           <CardContent>

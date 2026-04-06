@@ -10,9 +10,9 @@ from users.serializers.tokens import CustomTokenObtainPairSerializer
         tags=["Auth"],
         summary="Obtain JWT token pair",
         description=(
-            "Authenticate with **username** and **password**. Returns **access** and **refresh** "
-            "JWT strings. The access token payload includes a `role` field (viewer | analyst | admin). "
-            "Send subsequent requests with header: `Authorization: Bearer <access>`."
+            "Authenticate with **email** and **DEMO_LOGIN_PASSWORD** (viewer/analyst), or "
+            "**ADMIN_DEMO_EMAIL** with an **empty password** (admin UI). "
+            "Returns **access** and **refresh** JWTs with `role` in the access payload."
         ),
         responses={
             200: OpenApiResponse(
@@ -22,8 +22,13 @@ from users.serializers.tokens import CustomTokenObtainPairSerializer
         },
         examples=[
             OpenApiExample(
-                "Login",
-                value={"username": "analyst1", "password": "your-password"},
+                "Viewer / analyst",
+                value={"email": "analyst@demo.finance", "password": "<DEMO_LOGIN_PASSWORD>"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Admin (passwordless when enabled)",
+                value={"email": "admin@demo.finance", "password": ""},
                 request_only=True,
             ),
         ],

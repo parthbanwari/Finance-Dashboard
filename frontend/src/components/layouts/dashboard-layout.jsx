@@ -7,6 +7,7 @@ const HEADER_TITLES = {
   "/transactions": "Transactions",
   "/analytics": "Analytics",
   "/settings": "Settings",
+  "/settings/team": "Team",
 };
 
 /**

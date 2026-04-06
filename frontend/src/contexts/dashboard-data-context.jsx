@@ -18,11 +18,11 @@ function canAccessAnalytics(role) {
   return role === "analyst" || role === "admin";
 }
 
-function buildAnalyticsParams(dateFrom, dateTo, currency) {
-  const p = {};
+/** Analytics are always scoped to Indian Rupees (INR) only. */
+function buildAnalyticsParams(dateFrom, dateTo) {
+  const p = { currency: APP_CURRENCY };
   if (dateFrom) p.date_from = dateFrom;
   if (dateTo) p.date_to = dateTo;
-  if (currency) p.currency = currency;
   return p;
 }
 
@@ -34,31 +34,15 @@ export function DashboardDataProvider() {
   const [error, setError] = useState(null);
   const [summary, setSummary] = useState(null);
   const [categoryBreakdown, setCategoryBreakdown] = useState(null);
-  const [monthlyTrends, setMonthlyTrends] = useState(null);
+  const [runningBalanceSeries, setRunningBalanceSeries] = useState(null);
   const [recent, setRecent] = useState([]);
   const [analyticsForbidden, setAnalyticsForbidden] = useState(false);
 
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [filterCurrency, setFilterCurrency] = useState("");
-  const [selectedCurrency, setSelectedCurrency] = useState(APP_CURRENCY);
   const [tick, setTick] = useState(0);
 
   const refetch = useCallback(() => setTick((t) => t + 1), []);
-
-  const availableCurrencies = useMemo(() => {
-    const keys = Object.keys(summary?.totals_by_currency ?? {});
-    return keys.length ? keys.sort() : [APP_CURRENCY];
-  }, [summary]);
-
-  useEffect(() => {
-    if (!summary?.totals_by_currency) return;
-    const keys = Object.keys(summary.totals_by_currency);
-    if (!keys.length) return;
-    if (!keys.includes(selectedCurrency)) {
-      setSelectedCurrency(keys[0] ?? APP_CURRENCY);
-    }
-  }, [summary, selectedCurrency]);
 
   useEffect(() => {
     if (!user?.id) {
@@ -71,13 +55,13 @@ export function DashboardDataProvider() {
     setError(null);
 
     const run = async () => {
-      const params = buildAnalyticsParams(dateFrom, dateTo, filterCurrency || undefined);
+      const params = buildAnalyticsParams(dateFrom, dateTo);
 
       if (!canAccessAnalytics(user?.role)) {
         setAnalyticsForbidden(true);
         setSummary(null);
         setCategoryBreakdown(null);
-        setMonthlyTrends(null);
+        setRunningBalanceSeries(null);
         try {
           const list = await transactionApi.listTransactions({
             page_size: 10,
@@ -99,16 +83,16 @@ export function DashboardDataProvider() {
 
       setAnalyticsForbidden(false);
       try {
-        const [s, c, m, r] = await Promise.all([
+        const [s, c, rb, r] = await Promise.all([
           dashboardApi.getSummary(params),
           dashboardApi.getCategoryBreakdown(params),
-          dashboardApi.getMonthlyTrends(params),
+          dashboardApi.getRunningBalanceSeries(params),
           dashboardApi.getRecentTransactions({ ...params, limit: 10 }),
         ]);
         if (!cancelled) {
           setSummary(s);
           setCategoryBreakdown(c);
-          setMonthlyTrends(m);
+          setRunningBalanceSeries(rb);
           setRecent(r.results);
           setError(null);
         }
@@ -117,7 +101,7 @@ export function DashboardDataProvider() {
           setError(getAxiosErrorMessage(e));
           setSummary(null);
           setCategoryBreakdown(null);
-          setMonthlyTrends(null);
+          setRunningBalanceSeries(null);
           setRecent([]);
         }
       } finally {
@@ -129,7 +113,7 @@ export function DashboardDataProvider() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, user?.role, dateFrom, dateTo, filterCurrency, tick]);
+  }, [user?.id, user?.role, dateFrom, dateTo, tick]);
 
   const value = useMemo(
     () => ({
@@ -137,18 +121,13 @@ export function DashboardDataProvider() {
       error,
       summary,
       categoryBreakdown,
-      monthlyTrends,
+      runningBalanceSeries,
       recent,
       analyticsForbidden,
       dateFrom,
       dateTo,
-      filterCurrency,
       setDateFrom,
       setDateTo,
-      setFilterCurrency,
-      selectedCurrency,
-      setSelectedCurrency,
-      availableCurrencies,
       refetch,
     }),
     [
@@ -156,14 +135,11 @@ export function DashboardDataProvider() {
       error,
       summary,
       categoryBreakdown,
-      monthlyTrends,
+      runningBalanceSeries,
       recent,
       analyticsForbidden,
       dateFrom,
       dateTo,
-      filterCurrency,
-      selectedCurrency,
-      availableCurrencies,
       refetch,
     ],
   );

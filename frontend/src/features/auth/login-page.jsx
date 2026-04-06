@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/contexts/auth-context";
@@ -7,25 +7,50 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getAxiosErrorMessage } from "@/lib/errors";
+import { cn } from "@/lib/utils";
+
+const DEMO_VIEWER = "viewer@demo.finance";
+const DEMO_ANALYST = "analyst@demo.finance";
+const DEMO_ADMIN = "admin@demo.finance";
 
 export function LoginPage() {
-  const { user, loading, requestOtp, verifyOtp } = useAuth();
+  const { user, loading, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname ?? "/dashboard";
 
-  const [step, setStep] = useState("email");
-  const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
+  /** staff = viewer/analyst + password; admin = email only (passwordless) */
+  const [panel, setPanel] = useState("staff");
+  const [mode, setMode] = useState("viewer");
+  const [email, setEmail] = useState(DEMO_VIEWER);
+  const [password, setPassword] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
-  const [info, setInfo] = useState(null);
+  const [adminError, setAdminError] = useState(null);
+
+  const applyMode = useCallback((next) => {
+    setMode(next);
+    setEmail(next === "viewer" ? DEMO_VIEWER : DEMO_ANALYST);
+  }, []);
+
+  useEffect(() => {
+    if (location.pathname !== "/login") return;
+    setPanel("staff");
+    setMode("viewer");
+    setEmail(DEMO_VIEWER);
+    setPassword("");
+    setAdminEmail("");
+    setFormError(null);
+    setAdminError(null);
+  }, [location.pathname, location.key]);
 
   if (loading) {
     return (
@@ -43,44 +68,21 @@ export function LoginPage() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  async function sendCode() {
+  async function onSubmitMain(e) {
+    e.preventDefault();
     setFormError(null);
-    setInfo(null);
     const trimmed = email.trim();
     if (!trimmed) {
       setFormError("Enter your email address.");
       return;
     }
-    setSubmitting(true);
-    try {
-      const res = await requestOtp(trimmed);
-      setInfo(res.detail ?? "If an account exists, check your email for the code.");
-      setStep("otp");
-      setOtp("");
-    } catch (err) {
-      setFormError(getAxiosErrorMessage(err));
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function onSendCode(e) {
-    e.preventDefault();
-    await sendCode();
-  }
-
-  async function onVerify(e) {
-    e.preventDefault();
-    setFormError(null);
-    const trimmed = email.trim();
-    const code = otp.replace(/\s/g, "");
-    if (code.length !== 6) {
-      setFormError("Enter the 6-digit code from your email.");
+    if (!password) {
+      setFormError("Enter the shared sign-in password.");
       return;
     }
     setSubmitting(true);
     try {
-      await verifyOtp(trimmed, code);
+      await login(trimmed, password);
       navigate(from, { replace: true });
     } catch (err) {
       setFormError(getAxiosErrorMessage(err));
@@ -89,95 +91,176 @@ export function LoginPage() {
     }
   }
 
-  function goBackToEmail() {
-    setStep("email");
-    setOtp("");
-    setFormError(null);
-    setInfo(null);
+  async function onSubmitAdmin(e) {
+    e.preventDefault();
+    setAdminError(null);
+    const trimmed = adminEmail.trim().toLowerCase();
+    if (!trimmed) {
+      setAdminError("Enter the admin email.");
+      return;
+    }
+    if (trimmed !== DEMO_ADMIN) {
+      setAdminError(`Use exactly ${DEMO_ADMIN} to sign in as admin.`);
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await login(DEMO_ADMIN, "");
+      navigate(from, { replace: true });
+    } catch (err) {
+      setAdminError(getAxiosErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-background p-4 py-8">
       <Card className="w-full max-w-md border-border/80 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl">Sign in</CardTitle>
+          <CardTitle className="text-2xl">
+            {panel === "admin" ? "Admin sign in" : "Sign in"}
+          </CardTitle>
           <CardDescription>
-            {step === "email"
-              ? "Enter your email. We’ll send a one-time code — no password."
-              : `We sent a code to ${email.trim()}. Enter it below.`}
+            {panel === "admin"
+              ? "Enter the admin email only — no password required."
+              : "Viewer or analyst: use email and the shared environment password."}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {step === "email" ? (
-            <form onSubmit={onSendCode} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  inputMode="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              {formError ? (
-                <p className="text-sm text-destructive" role="alert">
-                  {formError}
-                </p>
-              ) : null}
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? "Sending…" : "Send sign-in code"}
+        <CardContent className="space-y-6">
+          {panel === "staff" ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-dashed"
+                onClick={() => {
+                  setPanel("admin");
+                  setFormError(null);
+                  setAdminEmail("");
+                  setAdminError(null);
+                }}
+              >
+                Sign in as admin
               </Button>
-            </form>
+
+              <section aria-labelledby="staff-login-heading" className="space-y-4">
+                <h2 id="staff-login-heading" className="text-sm font-semibold text-foreground">
+                  Viewer or analyst
+                </h2>
+                <div
+                  className="grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted/40 p-1"
+                  role="group"
+                  aria-label="Account type"
+                >
+                  <Button
+                    type="button"
+                    variant={mode === "viewer" ? "default" : "ghost"}
+                    className={cn("w-full", mode !== "viewer" && "text-muted-foreground")}
+                    onClick={() => applyMode("viewer")}
+                  >
+                    Viewer
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={mode === "analyst" ? "default" : "ghost"}
+                    className={cn("w-full", mode !== "analyst" && "text-muted-foreground")}
+                    onClick={() => applyMode("analyst")}
+                  >
+                    Analyst
+                  </Button>
+                </div>
+
+                <form onSubmit={onSubmitMain} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Email</Label>
+                    <Input
+                      id="login-email"
+                      name="username"
+                      type="email"
+                      autoComplete="username"
+                      inputMode="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">Password</Label>
+                    <Input
+                      id="login-password"
+                      name="password"
+                      type="password"
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  {formError ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      {formError}
+                    </p>
+                  ) : null}
+                  <Button type="submit" className="w-full" disabled={submitting}>
+                    {submitting ? "Signing in…" : "Sign in"}
+                  </Button>
+                </form>
+              </section>
+            </>
           ) : (
-            <form onSubmit={onVerify} className="space-y-4">
-              {info ? (
-                <p className="text-sm text-muted-foreground" role="status">
-                  {info}
-                </p>
-              ) : null}
-              <div className="space-y-2">
-                <Label htmlFor="otp">One-time code</Label>
-                <Input
-                  id="otp"
-                  name="otp"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  placeholder="000000"
-                  maxLength={8}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/[^\d\s]/g, ""))}
-                  required
-                />
-              </div>
-              {formError ? (
-                <p className="text-sm text-destructive" role="alert">
-                  {formError}
-                </p>
-              ) : null}
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button type="button" variant="outline" className="sm:flex-1" onClick={goBackToEmail}>
-                  Change email
+            <section aria-labelledby="admin-login-heading" className="space-y-4">
+              <form onSubmit={onSubmitAdmin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-email">Email</Label>
+                  <Input
+                    id="admin-email"
+                    name="admin-email"
+                    type="email"
+                    autoComplete="username"
+                    inputMode="email"
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    placeholder={DEMO_ADMIN}
+                    aria-invalid={!!adminError}
+                    autoFocus
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter <span className="font-mono text-foreground/90">{DEMO_ADMIN}</span> to
+                    continue.
+                  </p>
+                </div>
+                {adminError ? (
+                  <p className="text-sm text-destructive" role="alert">
+                    {adminError}
+                  </p>
+                ) : null}
+                <Button type="submit" className="w-full" disabled={submitting}>
+                  {submitting ? "Signing in…" : "Sign in"}
                 </Button>
-                <Button type="submit" className="sm:flex-1" disabled={submitting}>
-                  {submitting ? "Verifying…" : "Sign in"}
-                </Button>
-              </div>
+              </form>
               <Button
                 type="button"
                 variant="ghost"
                 className="w-full text-muted-foreground"
-                disabled={submitting}
-                onClick={() => void sendCode()}
+                onClick={() => {
+                  setPanel("staff");
+                  setAdminError(null);
+                }}
               >
-                Resend code
+                ← Back to sign in with email and password
               </Button>
-            </form>
+            </section>
           )}
         </CardContent>
+        <CardFooter className="flex flex-col border-t border-border bg-muted/20 px-6 py-4">
+          <p className="text-center text-xs leading-relaxed text-muted-foreground">
+            Demo users:{" "}
+            <span className="font-mono text-[0.7rem]">{DEMO_VIEWER}</span>,{" "}
+            <span className="font-mono text-[0.7rem]">{DEMO_ANALYST}</span>,{" "}
+            <span className="font-mono text-[0.7rem]">{DEMO_ADMIN}</span>.
+          </p>
+        </CardFooter>
       </Card>
     </div>
   );

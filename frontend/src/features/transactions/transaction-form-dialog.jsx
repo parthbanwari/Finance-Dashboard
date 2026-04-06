@@ -30,7 +30,6 @@ export function TransactionFormDialog({
   onSuccess,
 }) {
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState(APP_CURRENCY);
   const [type, setType] = useState("expense");
   const [categoryId, setCategoryId] = useState("");
   const [transactionDate, setTransactionDate] = useState(todayIsoDate());
@@ -82,7 +81,6 @@ export function TransactionFormDialog({
     }
     if (mode === "create") {
       setAmount("");
-      setCurrency(APP_CURRENCY);
       setType("expense");
       setCategoryId("");
       setTransactionDate(todayIsoDate());
@@ -111,15 +109,9 @@ export function TransactionFormDialog({
       setFormError("Select a category.");
       return;
     }
-    const cur = currency.trim().toUpperCase() || APP_CURRENCY;
-    if (cur.length !== 3) {
-      setFormError("Currency must be a 3-letter ISO code.");
-      return;
-    }
-
     const payload = {
       amount: amt,
-      currency: cur,
+      currency: APP_CURRENCY,
       type,
       category_id: cat,
       transaction_date: transactionDate,
@@ -183,33 +175,20 @@ export function TransactionFormDialog({
             </div>
           ) : null}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="tx-amount" className="inline-flex items-center gap-1.5">
-                <RupeeIcon className="size-3.5" />
-                Amount
-              </Label>
-              <Input
-                id="tx-amount"
-                inputMode="decimal"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="tx-currency" className="inline-flex items-center gap-1.5">
-                <RupeeIcon className="size-3.5" />
-                Currency (ISO)
-              </Label>
-              <Input
-                id="tx-currency"
-                maxLength={3}
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-                required
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="tx-amount" className="inline-flex items-center gap-1.5">
+              <RupeeIcon className="size-3.5" />
+              Amount (Rs)
+            </Label>
+            <Input
+              id="tx-amount"
+              inputMode="decimal"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              required
+            />
+            <p className="text-xs text-muted-foreground">All amounts are in Indian Rupees (Rs) only.</p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="tx-type">Type</Label>

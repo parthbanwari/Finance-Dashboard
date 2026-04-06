@@ -6,7 +6,7 @@ function colorForSeriesEntry(entry) {
   const key = String(entry.dataKey ?? entry.name ?? "");
   if (key === "Income") return AREA_INCOME_EXPENSE_HEX[0];
   if (key === "Expense") return AREA_INCOME_EXPENSE_HEX[1];
-  if (key === "Net") return AREA_INCOME_EXPENSE_HEX[0];
+  if (key === "Net" || key === "Balance") return AREA_INCOME_EXPENSE_HEX[0];
   const c = entry.color;
   return typeof c === "string" && c.startsWith("#") ? c : AREA_INCOME_EXPENSE_HEX[0];
 }
@@ -35,11 +35,35 @@ export function AreaChartDarkTooltip({ active, payload, label }) {
       {label != null && String(label) !== "" ? (
         <p className="mb-1.5 border-b border-border/60 pb-1 text-xs font-medium text-foreground">{label}</p>
       ) : null}
+      {(() => {
+        const row = rows[0]?.payload;
+        const d = row?.delta;
+        const t = row?.type;
+        if (d == null || d === "") return null;
+        const n = Number.parseFloat(String(d));
+        if (!Number.isFinite(n)) return null;
+        const step =
+          t === "expense"
+            ? `Expense ${formatRupeesCompact(Math.abs(n))}`
+            : t === "income"
+              ? `Income ${formatRupeesCompact(Math.abs(n))}`
+              : `Step ${formatRupeesCompact(n)}`;
+        return (
+          <p className="mb-1.5 text-xs text-muted-foreground" role="note">
+            {step}
+          </p>
+        );
+      })()}
       <div className="space-y-1.5">
         {rows.map((entry) => {
           const key = String(entry.dataKey ?? entry.name ?? "");
           const rawName = entry.name ?? entry.dataKey ?? "—";
-          const name = key === "Net" ? "Monthly net" : rawName;
+          const name =
+            key === "Balance"
+              ? "Running balance"
+              : key === "Net"
+                ? "Monthly net"
+                : rawName;
           const v = entry.value;
           const n = typeof v === "number" ? v : Number.parseFloat(String(v));
           const color = colorForSeriesEntry(entry);
@@ -69,7 +93,7 @@ export function AreaChartDarkTooltip({ active, payload, label }) {
 }
 
 /**
- * Compact tooltip for Tremor DonutChart — category left, ₹ amount right (matches analytics reference).
+ * Compact tooltip for Tremor DonutChart — category left, Rs amount right.
  */
 export function DonutChartDarkTooltip({ active, payload }) {
   if (!active || !payload?.[0]) return null;

@@ -10,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { RupeeIcon } from "@/components/currency/rupee-icon";
 import { getAxiosErrorMessage } from "@/lib/errors";
 import { formatMoney } from "@/lib/format";
 
@@ -48,9 +47,8 @@ export function TransactionDeleteDialog({
             {transaction ? (
               <>
                 <span className="inline-flex flex-wrap items-center gap-1 font-mono">
-                  {transaction.transaction_date} · {transaction.category.name} ·
-                  <RupeeIcon className="size-3.5" />
-                  {formatMoney(transaction.amount)} {transaction.currency}
+                  {transaction.transaction_date} · {transaction.category.name} · Rs{" "}
+                  {formatMoney(transaction.amount)}
                 </span>
               </>
             ) : null}

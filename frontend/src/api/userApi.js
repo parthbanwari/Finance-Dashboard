@@ -3,22 +3,10 @@ import axios from "axios";
 import { apiClient, baseURL } from "@/api/client";
 import { unwrapApiResponse } from "@/api/normalize";
 
-/** Passwordless: request a 6-digit code to the email (active user must exist). */
-export async function requestOtp(email) {
-  const { data } = await axios.post(`${baseURL}/auth/otp/send/`, { email });
-  return unwrapApiResponse(data);
-}
-
-/** Exchange email + OTP for JWT pair (same as legacy password login). */
-export async function verifyOtp(email, otp) {
-  const { data } = await axios.post(`${baseURL}/auth/otp/verify/`, { email, otp });
-  return unwrapApiResponse(data);
-}
-
-/** Optional: username/password (e.g. scripts); primary UI uses OTP. */
-export async function login(username, password) {
+/** Sign in with email + shared DEMO_LOGIN_PASSWORD (configured on server). */
+export async function login(email, password) {
   const { data } = await axios.post(`${baseURL}/auth/token/`, {
-    username,
+    email,
     password,
   });
   return unwrapApiResponse(data);
@@ -31,5 +19,19 @@ export async function getMe() {
 
 export async function patchMe(body) {
   const { data } = await apiClient.patch("/users/me/", body);
+  return data;
+}
+
+/** Admin only — paginated list. */
+export async function listUsers(params = {}) {
+  const { data } = await apiClient.get("/users/", {
+    params: { page_size: 100, ...params },
+  });
+  return data;
+}
+
+/** Admin only — update role, active flag, etc. */
+export async function patchUser(userId, body) {
+  const { data } = await apiClient.patch(`/users/${userId}/`, body);
   return data;
 }
