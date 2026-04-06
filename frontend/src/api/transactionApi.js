@@ -37,6 +37,10 @@ export async function createCategory(payload) {
   return data;
 }
 
+export async function deleteCategory(id) {
+  await apiClient.delete(`/transactions/categories/${id}/`);
+}
+
 /** Paginated; callers may request page_size up to 100 (backend max). */
 export async function listCategoriesPage(page = 1, pageSize = 100) {
   const { data } = await apiClient.get("/transactions/categories/", {

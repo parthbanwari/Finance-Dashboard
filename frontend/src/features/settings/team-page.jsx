@@ -72,7 +72,7 @@ export function TeamPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">Team</h2>
+        <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Team</h2>
         <p className="text-muted-foreground">
           Assign <strong>Viewer</strong> (read-only) or <strong>Analyst</strong> (can add and edit
           data). <strong>Admin</strong> can manage users and delete records.
@@ -82,18 +82,17 @@ export function TeamPage() {
       {error ? <ErrorBlock message={error} /> : null}
 
       <Card>
-        <CardHeader className="flex flex-row items-start gap-3 space-y-0">
+        <CardHeader className="flex flex-col items-start gap-3 space-y-0 sm:flex-row">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Users className="size-5" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
             <CardTitle className="text-base">Users</CardTitle>
             <CardDescription>
-              Users must exist in the database (create them in Django admin). Sign-in uses email +
-              shared password.
+              Users must exist in the database.
             </CardDescription>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={() => void load()}>
+          <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => void load()}>
             Refresh
           </Button>
         </CardHeader>
@@ -104,12 +103,12 @@ export function TeamPage() {
             <p className="text-sm text-muted-foreground">No users found.</p>
           ) : (
             <div className="overflow-x-auto rounded-md border border-border">
-              <table className="w-full min-w-[32rem] text-sm">
+              <table className="w-full min-w-[42rem] text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/40 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     <th className="px-3 py-2">Email</th>
                     <th className="px-3 py-2">Username</th>
-                    <th className="px-3 py-2">Role</th>
+                    <th className="w-[10rem] px-3 py-2">Role</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -127,7 +126,7 @@ export function TeamPage() {
                       <td className="px-3 py-2.5 text-muted-foreground">{u.username}</td>
                       <td className="px-3 py-2">
                         <select
-                          className="h-9 w-full max-w-[11rem] rounded-md border border-input bg-background px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           value={u.role}
                           disabled={savingId === u.id}
                           onChange={(e) => onRoleChange(u, e.target.value)}

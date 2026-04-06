@@ -50,7 +50,7 @@ export function DashboardFilters() {
             Filter KPIs, charts, and recent activity. Leave empty for no date filter.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 sm:justify-end">
           <Button
             type="button"
             variant="secondary"
@@ -103,7 +103,7 @@ export function DashboardFilters() {
         </div>
       </div>
 
-      <div className="grid gap-4 border-t border-border/50 pt-4 sm:grid-cols-2">
+      <div className="grid gap-3 border-t border-border/50 pt-4 sm:gap-4 sm:grid-cols-2">
         <DatePickerField
           id="dash-from"
           label="From"

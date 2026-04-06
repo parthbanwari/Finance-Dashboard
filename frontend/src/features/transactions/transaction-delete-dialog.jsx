@@ -43,7 +43,7 @@ export function TransactionDeleteDialog({
         <DialogHeader>
           <DialogTitle>Delete transaction</DialogTitle>
           <DialogDescription>
-            This soft-deletes the row (Admin only).{" "}
+            This deletes the row.{" "}
             {transaction ? (
               <>
                 <span className="inline-flex flex-wrap items-center gap-1 font-mono">

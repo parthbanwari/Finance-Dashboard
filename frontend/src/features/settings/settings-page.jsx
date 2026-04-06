@@ -55,7 +55,7 @@ export function SettingsPage() {
   return (
     <div className="mx-auto max-w-lg space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">Settings</h2>
+        <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Settings</h2>
         <p className="text-muted-foreground">Manage your profile and how you appear in the app.</p>
       </div>
 

@@ -21,6 +21,13 @@ function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function sanitizeAmountInput(value) {
+  const cleaned = String(value).replace(/[^0-9.]/g, "");
+  const firstDot = cleaned.indexOf(".");
+  if (firstDot === -1) return cleaned;
+  return `${cleaned.slice(0, firstDot + 1)}${cleaned.slice(firstDot + 1).replace(/\./g, "")}`;
+}
+
 export function TransactionFormDialog({
   open,
   onOpenChange,
@@ -72,7 +79,6 @@ export function TransactionFormDialog({
     setFormError(null);
     if (mode === "edit" && transaction) {
       setAmount(transaction.amount);
-      setCurrency(transaction.currency);
       setType(transaction.type);
       setCategoryId(String(transaction.category.id));
       setTransactionDate(transaction.transaction_date);
@@ -135,6 +141,9 @@ export function TransactionFormDialog({
   }
 
   const noCategories = !categoriesLoading && categories.length === 0;
+  const amountKeyAllowed = (key) =>
+    /^[0-9]$/.test(key) ||
+    [".", "Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Home", "End"].includes(key);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -184,11 +193,29 @@ export function TransactionFormDialog({
               id="tx-amount"
               inputMode="decimal"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => setAmount(sanitizeAmountInput(e.target.value))}
+              onKeyDown={(e) => {
+                if (e.ctrlKey || e.metaKey || e.altKey) return;
+                if (!amountKeyAllowed(e.key)) {
+                  e.preventDefault();
+                  return;
+                }
+                if (e.key === "." && amount.includes(".")) {
+                  e.preventDefault();
+                }
+              }}
+              onPaste={(e) => {
+                e.preventDefault();
+                const pasted = e.clipboardData?.getData("text") ?? "";
+                const input = e.currentTarget;
+                const start = input.selectionStart ?? input.value.length;
+                const end = input.selectionEnd ?? input.value.length;
+                const nextRaw = `${amount.slice(0, start)}${pasted}${amount.slice(end)}`;
+                setAmount(sanitizeAmountInput(nextRaw));
+              }}
               placeholder="0.00"
               required
             />
-            <p className="text-xs text-muted-foreground">All amounts are in Indian Rupees (Rs) only.</p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="tx-type">Type</Label>

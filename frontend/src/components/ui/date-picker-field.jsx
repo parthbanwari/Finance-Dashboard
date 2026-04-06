@@ -76,7 +76,7 @@ export function DatePickerField({
       <Label htmlFor={id} className="text-foreground">
         {label}
       </Label>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button

@@ -48,13 +48,14 @@ function NavItems({ onNavigate, role }) {
         <NavLink
           key={to}
           to={to}
+          end={to === "/settings"}
           onClick={() => onNavigate?.()}
           className={({ isActive }) =>
             cn(
               "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
               isActive
-                ? "border-l-2 border-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-                : "border-l-2 border-transparent text-sidebar-foreground/85 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
             )
           }
         >
@@ -106,7 +107,7 @@ export function AppSidebar() {
         </div>
       </aside>
 
-      <div className="flex h-14 items-center border-b border-border bg-card px-4 md:hidden">
+      <div className="flex h-14 items-center border-b border-border bg-card px-3 sm:px-4 md:hidden">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" aria-label="Open menu">
@@ -144,9 +145,9 @@ export function AppSidebar() {
             </div>
           </SheetContent>
         </Sheet>
-        <span className="ml-3 inline-flex items-center gap-1.5 text-sm font-semibold">
+        <span className="ml-2 inline-flex min-w-0 items-center gap-1.5 text-sm font-semibold">
           <IndianRupee className="size-4 text-primary" aria-hidden />
-          Finance Dashboard
+          <span className="truncate">Finance Dashboard</span>
         </span>
       </div>
     </>

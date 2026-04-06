@@ -125,7 +125,7 @@ class TransactionPermission(permissions.BasePermission):
         if action == "create":
             return role in (User.Role.ANALYST, User.Role.ADMIN)
         if action == "destroy":
-            return role == User.Role.ADMIN
+            return role in (User.Role.ANALYST, User.Role.ADMIN)
         if action in ("update", "partial_update"):
             return role in (User.Role.ANALYST, User.Role.ADMIN)
         return False
@@ -138,7 +138,7 @@ class TransactionPermission(permissions.BasePermission):
         if action == "retrieve":
             return True
         if action == "destroy":
-            return role == User.Role.ADMIN
+            return role in (User.Role.ANALYST, User.Role.ADMIN)
         if action in ("update", "partial_update"):
             return role in (User.Role.ANALYST, User.Role.ADMIN)
         return False
@@ -165,7 +165,7 @@ class CategoryPermission(permissions.BasePermission):
         if action == "create":
             return role in (User.Role.ANALYST, User.Role.ADMIN)
         if action == "destroy":
-            return role == User.Role.ADMIN
+            return role in (User.Role.ANALYST, User.Role.ADMIN)
         if action in ("update", "partial_update"):
             return role in (User.Role.ANALYST, User.Role.ADMIN)
         return False
@@ -178,7 +178,7 @@ class CategoryPermission(permissions.BasePermission):
         if action == "retrieve":
             return True
         if action == "destroy":
-            return role == User.Role.ADMIN
+            return role in (User.Role.ANALYST, User.Role.ADMIN)
         if action in ("update", "partial_update"):
             return role in (User.Role.ANALYST, User.Role.ADMIN)
         return False

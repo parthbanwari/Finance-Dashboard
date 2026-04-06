@@ -37,9 +37,9 @@ export function AnalyticsPage() {
   );
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">Analytics</h2>
+        <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Analytics</h2>
         <p className="text-muted-foreground">
           Trends and category breakdowns — use the same filters as the dashboard.
         </p>

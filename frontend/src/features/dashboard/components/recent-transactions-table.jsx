@@ -14,9 +14,9 @@ export function RecentTransactionsTable({ transactions, analyticsForbidden }) {
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg border border-border/60 bg-muted/10",
+        "overflow-x-auto rounded-lg border border-border/60 bg-muted/10",
         "[&_.tremor-TableRoot]:border-0",
-        "[&_table]:text-sm",
+        "[&_table]:min-w-[40rem] [&_table]:text-sm",
         "[&_.tremor-TableHeaderCell]:bg-secondary/40 [&_.tremor-TableHeaderCell]:text-muted-foreground",
         "[&_.tremor-TableCell]:border-border/50 [&_.tremor-TableRow:hover]:bg-accent/25",
       )}

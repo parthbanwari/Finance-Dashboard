@@ -41,9 +41,9 @@ export function DashboardPage() {
   );
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
       <header className="space-y-1">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h2>
+        <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Dashboard</h2>
         <p className="text-muted-foreground">
           Your financial snapshot — filters apply to KPIs, charts, and recent activity below.
         </p>
