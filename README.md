@@ -5,7 +5,7 @@ Track income, expenses, categories, and analytics in one clean dashboard with ro
 ## Live Demo
 
 - Website: [Finance Tracker](https://finance-dashboard-frontend-fawn.vercel.app/)
-- Quick login: use **your email** + password **`demo1234`**
+- Quick login: use **your email** + password **`DEMO1234`**
 
 ## Why this project
 
