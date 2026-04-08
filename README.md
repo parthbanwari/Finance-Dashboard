@@ -72,3 +72,13 @@ Docs:
 - Never commit `.env`
 - Never expose real secrets, DB URIs, or private credentials
 - Keep environment values configurable via `.env.example`
+
+## Backend API Brief (Implementation Notes)
+
+- **Architecture:** Django REST + modular apps (`users`, `transactions`, `analytics`) with `/api/v1` versioned routing.
+- **Auth:** JWT access/refresh with email-based login; selected staff mode (viewer/analyst) is applied at login for `/users/me`.
+- **Permissions:** Role-based access control enforced in backend permission classes (viewer/analyst/admin).
+- **Scalability:** Analytics endpoints use grouped DB aggregations (not Python loops) and short-lived per-user cache.
+- **Latency Controls:** `select_related` on transaction/category paths + bounded list limits for recent endpoints.
+- **Rate Limiting:** Global DRF throttles for user/anon traffic, plus stricter throttles on auth token/refresh endpoints.
+- **Docs:** OpenAPI docs available at `/api/docs`, `/api/redoc`, `/api/schema`.

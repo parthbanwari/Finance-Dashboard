@@ -12,19 +12,15 @@ def filtered_transactions(user, request) -> QuerySet[Transaction]:
 
     Query params:
       - date_from, date_to: filter transaction_date (inclusive)
-      - currency: filter to one ISO currency code
     """
     qs = queryset_for_user(user)
     params = request.query_params
     date_from = params.get("date_from")
     date_to = params.get("date_to")
-    currency = params.get("currency")
     if date_from:
         qs = qs.filter(transaction_date__gte=date_from)
     if date_to:
         qs = qs.filter(transaction_date__lte=date_to)
-    if currency:
-        qs = qs.filter(currency__iexact=currency.strip())
     return qs
 
 

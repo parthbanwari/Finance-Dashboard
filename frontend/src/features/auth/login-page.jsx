@@ -82,7 +82,7 @@ export function LoginPage() {
     }
     setSubmitting(true);
     try {
-      await login(trimmed, password);
+      await login(trimmed, password, mode);
       navigate(from, { replace: true });
     } catch (err) {
       setFormError(getAxiosErrorMessage(err));

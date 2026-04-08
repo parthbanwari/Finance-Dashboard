@@ -39,10 +39,10 @@ export function AuthProvider({ children }) {
     void refreshUser().finally(() => setLoading(false));
   }, [refreshUser]);
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, role) => {
     setError(null);
     try {
-      const tokens = await userApi.login(email.trim(), password);
+      const tokens = await userApi.login(email.trim(), password, role);
       localStorage.setItem("access_token", tokens.access);
       localStorage.setItem("refresh_token", tokens.refresh);
       const me = await userApi.getMe();

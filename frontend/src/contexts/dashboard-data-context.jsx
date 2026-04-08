@@ -12,15 +12,13 @@ import * as dashboardApi from "@/api/dashboardApi";
 import * as transactionApi from "@/api/transactionApi";
 import { useAuth } from "@/contexts/auth-context";
 import { getAxiosErrorMessage } from "@/lib/errors";
-import { APP_CURRENCY } from "@/lib/format";
 
 function canAccessAnalytics(role) {
   return role === "analyst" || role === "admin";
 }
 
-/** Analytics are always scoped to Indian Rupees (INR) only. */
 function buildAnalyticsParams(dateFrom, dateTo) {
-  const p = { currency: APP_CURRENCY };
+  const p = {};
   if (dateFrom) p.date_from = dateFrom;
   if (dateTo) p.date_to = dateTo;
   return p;

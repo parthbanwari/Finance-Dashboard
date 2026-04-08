@@ -15,6 +15,7 @@ from core.openapi import (
 )
 from users.permissions import IsAnalystOrAdminForAnalytics
 
+from analytics.services.cache import get_or_set_analytics_cache
 from analytics.services.query_params import parse_limit
 from analytics.services.reports import (
     build_category_breakdown,
@@ -37,12 +38,6 @@ ANALYTICS_FILTERS = [
         OpenApiParameter.QUERY,
         description="Filter `transaction_date` <= this day (YYYY-MM-DD).",
     ),
-    OpenApiParameter(
-        "currency",
-        OpenApiTypes.STR,
-        OpenApiParameter.QUERY,
-        description="Restrict to one ISO 4217 currency code (this app uses INR / Rs only).",
-    ),
 ]
 
 RECENT_EXTRA = [
@@ -60,7 +55,7 @@ RECENT_EXTRA = [
     summary="Summary: income, expenses, net",
     description=(
         "**Analyst or Admin.** Returns per-currency totals (income and expenses as positive magnitudes), "
-        "net balance, and transaction counts. Respects optional date/currency filters."
+        "net balance, and transaction counts. Respects optional date filters."
     ),
     parameters=ANALYTICS_FILTERS,
     responses={
@@ -76,7 +71,13 @@ class SummaryView(EnvelopeMessageMixin, APIView):
         return "Financial summary retrieved successfully."
 
     def get(self, request):
-        return Response(build_summary(request.user, request))
+        data = get_or_set_analytics_cache(
+            user_id=request.user.id,
+            endpoint_name="summary",
+            request=request,
+            builder=lambda: build_summary(request.user, request),
+        )
+        return Response(data)
 
 
 @extend_schema(
@@ -94,7 +95,13 @@ class CategoryBreakdownView(APIView):
     permission_classes = [IsAuthenticated, IsAnalystOrAdminForAnalytics]
 
     def get(self, request):
-        return Response(build_category_breakdown(request.user, request))
+        data = get_or_set_analytics_cache(
+            user_id=request.user.id,
+            endpoint_name="category_breakdown",
+            request=request,
+            builder=lambda: build_category_breakdown(request.user, request),
+        )
+        return Response(data)
 
 
 @extend_schema(
@@ -115,7 +122,13 @@ class MonthlyTrendsView(EnvelopeMessageMixin, APIView):
         return "Monthly trends retrieved successfully."
 
     def get(self, request):
-        return Response(build_monthly_trends(request.user, request))
+        data = get_or_set_analytics_cache(
+            user_id=request.user.id,
+            endpoint_name="monthly_trends",
+            request=request,
+            builder=lambda: build_monthly_trends(request.user, request),
+        )
+        return Response(data)
 
 
 @extend_schema(
@@ -140,7 +153,13 @@ class RunningBalanceSeriesView(EnvelopeMessageMixin, APIView):
         return "Running balance series retrieved successfully."
 
     def get(self, request):
-        return Response(build_running_balance_series(request.user, request))
+        data = get_or_set_analytics_cache(
+            user_id=request.user.id,
+            endpoint_name="running_balance_series",
+            request=request,
+            builder=lambda: build_running_balance_series(request.user, request),
+        )
+        return Response(data)
 
 
 @extend_schema(
@@ -162,4 +181,10 @@ class RecentTransactionsView(EnvelopeMessageMixin, APIView):
 
     def get(self, request):
         limit = parse_limit(request)
-        return Response(build_recent_transactions(request.user, request, limit))
+        data = get_or_set_analytics_cache(
+            user_id=request.user.id,
+            endpoint_name=f"recent_transactions_{limit}",
+            request=request,
+            builder=lambda: build_recent_transactions(request.user, request, limit),
+        )
+        return Response(data)

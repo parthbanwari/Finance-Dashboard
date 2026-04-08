@@ -20,6 +20,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         super().__init__(*args, **kwargs)
         self.fields.pop("username", None)
         self.fields["email"] = serializers.EmailField(write_only=True)
+        self.fields["role"] = serializers.ChoiceField(
+            choices=[User.Role.VIEWER, User.Role.ANALYST],
+            write_only=True,
+            required=False,
+        )
         self.fields["password"] = serializers.CharField(
             write_only=True,
             required=False,
@@ -36,6 +41,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         email = (attrs.get("email") or "").strip().lower()
+        role_hint = attrs.get("role")
         password = attrs.get("password")
         if password is None:
             password = ""
@@ -81,7 +87,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             )
 
         if user is None:
-            user = self._get_or_create_demo_user(email, admin_email)
+            user = self._get_or_create_demo_user(email, admin_email, role_hint)
+        elif (
+            role_hint in (User.Role.VIEWER, User.Role.ANALYST)
+            and getattr(user, "role", None) in (User.Role.VIEWER, User.Role.ANALYST)
+            and user.role != role_hint
+        ):
+            # Staff login mode should decide viewer/analyst role for this email.
+            user.role = role_hint
+            user.save(update_fields=["role", "updated_at"])
 
         refresh = self.get_token(user)
         return {
@@ -89,7 +103,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "access": str(refresh.access_token),
         }
 
-    def _get_or_create_demo_user(self, email: str, admin_email: str):
+    def _get_or_create_demo_user(self, email: str, admin_email: str, role_hint: str | None):
         """
         Create a new active Viewer when the shared password matched and no user exists.
         Do not auto-create the reserved admin email — that account must be seeded (create_demo_users).
@@ -115,7 +129,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 user = UserModel(
                     username=username,
                     email=email,
-                    role=User.Role.VIEWER,
+                    role=role_hint if role_hint in (User.Role.VIEWER, User.Role.ANALYST) else User.Role.VIEWER,
                     is_active=True,
                 )
                 user.set_unusable_password()

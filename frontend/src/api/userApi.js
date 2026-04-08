@@ -4,10 +4,11 @@ import { apiClient, baseURL } from "@/api/client";
 import { unwrapApiResponse } from "@/api/normalize";
 
 /** Sign in with email + shared DEMO_LOGIN_PASSWORD (configured on server). */
-export async function login(email, password) {
+export async function login(email, password, role) {
   const { data } = await axios.post(`${baseURL}/auth/token/`, {
     email,
     password,
+    ...(role ? { role } : {}),
   });
   return unwrapApiResponse(data);
 }

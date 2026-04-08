@@ -44,7 +44,6 @@ def _filters_payload(request):
     return {
         "date_from": request.query_params.get("date_from"),
         "date_to": request.query_params.get("date_to"),
-        "currency": request.query_params.get("currency"),
     }
 
 

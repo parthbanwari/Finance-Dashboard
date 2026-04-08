@@ -1,4 +1,5 @@
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema, extend_schema_view
+from core.throttles import AuthRefreshRateThrottle, AuthTokenRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from core.openapi import TokenPairResponseSchema
@@ -36,6 +37,7 @@ from users.serializers.tokens import CustomTokenObtainPairSerializer
 )
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+    throttle_classes = [AuthTokenRateThrottle]
 
 
 @extend_schema_view(
@@ -57,3 +59,4 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 )
 class TokenRefreshViewWithSchema(TokenRefreshView):
     """Same behavior as SimpleJWT's TokenRefreshView; OpenAPI metadata only."""
+    throttle_classes = [AuthRefreshRateThrottle]

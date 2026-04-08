@@ -4,7 +4,6 @@ import { apiClient } from "@/api/client";
  * @typedef {Object} AnalyticsFiltersQuery
  * @property {string} [date_from]
  * @property {string} [date_to]
- * @property {string} [currency]
  */
 
 /**

@@ -136,6 +136,16 @@ REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ("core.renderers.EnvelopeJSONRenderer",),
     "EXCEPTION_HANDLER": "core.exceptions.custom_exception_handler",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": os.environ.get("API_THROTTLE_ANON", "60/min"),
+        "user": os.environ.get("API_THROTTLE_USER", "300/min"),
+        "auth_token": os.environ.get("API_THROTTLE_AUTH_TOKEN", "10/min"),
+        "auth_refresh": os.environ.get("API_THROTTLE_AUTH_REFRESH", "20/min"),
+    },
 }
 
 SIMPLE_JWT = {
@@ -152,6 +162,9 @@ CACHES = {
         "LOCATION": "finance-dashboard-cache",
     }
 }
+
+# Short-lived analytics cache per user + query params to reduce repeated dashboard load.
+ANALYTICS_CACHE_SECONDS = int(os.environ.get("ANALYTICS_CACHE_SECONDS", "30"))
 
 # Email — console in dev by default; set EMAIL_HOST + EMAIL_HOST_PASSWORD (e.g. Resend) to use SMTP.
 # See backend/EMAIL_SETUP.txt for provider steps.
