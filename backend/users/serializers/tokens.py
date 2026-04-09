@@ -4,9 +4,13 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from rest_framework import serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
+from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.tokens import RefreshToken
 
+from users.auth_errors import ACCOUNT_INACTIVE_LOGIN
 from users.models import User
+from users.services import inactivity
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -39,6 +43,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["role"] = user.role
         return token
 
+    @staticmethod
+    def _reject_if_stale_for_login(user):
+        if user and user.is_active and inactivity.is_stale(user):
+            inactivity.deactivate_for_inactivity(user)
+            raise serializers.ValidationError({"detail": [ACCOUNT_INACTIVE_LOGIN]})
+
     def validate(self, attrs):
         email = (attrs.get("email") or "").strip().lower()
         role_hint = attrs.get("role")
@@ -59,6 +69,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 and user.is_active
                 and getattr(user, "role", None) == User.Role.ADMIN
             ):
+                self._reject_if_stale_for_login(user)
+                inactivity.touch_last_login(user)
                 refresh = self.get_token(user)
                 return {
                     "refresh": str(refresh),
@@ -82,9 +94,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         user = UserModel.objects.filter(email__iexact=email).first()
         if user is not None and not user.is_active:
-            raise serializers.ValidationError(
-                {"detail": "No active account found with the given credentials."}
-            )
+            raise serializers.ValidationError({"detail": [ACCOUNT_INACTIVE_LOGIN]})
 
         if user is None:
             user = self._get_or_create_demo_user(email, admin_email, role_hint)
@@ -97,6 +107,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             user.role = role_hint
             user.save(update_fields=["role", "updated_at"])
 
+        self._reject_if_stale_for_login(user)
+        inactivity.touch_last_login(user)
         refresh = self.get_token(user)
         return {
             "refresh": str(refresh),
@@ -139,6 +151,29 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             existing = UserModel.objects.filter(email__iexact=email).first()
             if existing and existing.is_active:
                 return existing
+            if existing and not existing.is_active:
+                raise serializers.ValidationError({"detail": [ACCOUNT_INACTIVE_LOGIN]})
             raise serializers.ValidationError(
                 {"detail": "Could not create your account. Try again in a moment."}
             ) from None
+
+
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    """Refresh access token and bump last_login so active sessions reset the inactivity window."""
+
+    def validate(self, attrs):
+        refresh = RefreshToken(attrs["refresh"])
+        user_id = refresh[api_settings.USER_ID_CLAIM]
+        UserModel = get_user_model()
+        user = UserModel.objects.filter(
+            **{api_settings.USER_ID_FIELD: user_id},
+        ).first()
+
+        if user and user.is_active and inactivity.is_stale(user):
+            inactivity.deactivate_for_inactivity(user)
+            raise serializers.ValidationError({"detail": [ACCOUNT_INACTIVE_LOGIN]})
+
+        data = super().validate(attrs)
+        if user and user.is_active:
+            inactivity.touch_last_login(user)
+        return data

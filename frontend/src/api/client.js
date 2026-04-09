@@ -23,13 +23,28 @@ apiClient.interceptors.request.use((config) => {
 
 let refreshPromise = null;
 
+async function refreshWithFallback(refresh) {
+  const paths = ["/auth/token/refresh/", "/token/refresh/"];
+  let lastError = null;
+  for (const path of paths) {
+    try {
+      const { data } = await axios.post(`${baseURL}${path}`, { refresh });
+      return data;
+    } catch (error) {
+      lastError = error;
+      if (!axios.isAxiosError(error) || error.response?.status !== 404) {
+        throw error;
+      }
+    }
+  }
+  throw lastError ?? new Error("Unable to reach token refresh endpoint.");
+}
+
 async function refreshAccessToken() {
   const refresh = localStorage.getItem("refresh_token");
   if (!refresh) return null;
   try {
-    const { data } = await axios.post(`${baseURL}/auth/token/refresh/`, {
-      refresh,
-    });
+    const data = await refreshWithFallback(refresh);
     const body = unwrapApiResponse(data);
     const access = body.access;
     localStorage.setItem("access_token", access);

@@ -151,7 +151,7 @@ export function TransactionFormDialog({
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "New transaction" : "Edit transaction"}</DialogTitle>
           <DialogDescription>
-            Amounts are positive magnitudes; type determines income vs expense.
+            Add a transaction with the key details to keep your records accurate and easy to review later.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -248,7 +248,7 @@ export function TransactionFormDialog({
             </select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="tx-date">Date</Label>
+            <Label htmlFor="tx-date">Date (MM-DD-YYYY)</Label>
             <Input
               id="tx-date"
               type="date"

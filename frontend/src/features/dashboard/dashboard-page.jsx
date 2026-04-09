@@ -86,8 +86,7 @@ export function DashboardPage() {
             <CardHeader>
               <CardTitle className="text-base">Running balance</CardTitle>
               <CardDescription>
-                One point per transaction in date order: balance updates after each income and
-                expense in the filtered period.
+              Cumulative balance after each transaction in the filtered period (chronological order).
               </CardDescription>
             </CardHeader>
             <CardContent>

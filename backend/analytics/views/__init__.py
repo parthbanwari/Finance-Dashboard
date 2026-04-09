@@ -1,4 +1,5 @@
 from analytics.views.analytics import (
+    AnalyticsNoteView,
     CategoryBreakdownView,
     MonthlyTrendsView,
     RecentTransactionsView,
@@ -7,6 +8,7 @@ from analytics.views.analytics import (
 )
 
 __all__ = [
+    "AnalyticsNoteView",
     "CategoryBreakdownView",
     "MonthlyTrendsView",
     "RecentTransactionsView",

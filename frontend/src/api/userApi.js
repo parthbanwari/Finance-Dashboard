@@ -3,9 +3,25 @@ import axios from "axios";
 import { apiClient, baseURL } from "@/api/client";
 import { unwrapApiResponse } from "@/api/normalize";
 
+async function postWithFallback(paths, body) {
+  let lastError = null;
+  for (const path of paths) {
+    try {
+      const { data } = await axios.post(`${baseURL}${path}`, body);
+      return data;
+    } catch (error) {
+      lastError = error;
+      if (!axios.isAxiosError(error) || error.response?.status !== 404) {
+        throw error;
+      }
+    }
+  }
+  throw lastError ?? new Error("Unable to reach authentication endpoint.");
+}
+
 /** Sign in with email + shared DEMO_LOGIN_PASSWORD (configured on server). */
 export async function login(email, password, role) {
-  const { data } = await axios.post(`${baseURL}/auth/token/`, {
+  const data = await postWithFallback(["/auth/token/", "/token/"], {
     email,
     password,
     ...(role ? { role } : {}),

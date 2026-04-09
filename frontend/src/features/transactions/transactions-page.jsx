@@ -234,7 +234,7 @@ export function TransactionsPage() {
           ) : null}
           {!canWrite ? (
             <p className="text-sm text-muted-foreground">
-              Your role can use categories in filters; only Analyst or Admin can add new ones.
+              Only Analyst or Admin can add new ones.
             </p>
           ) : null}
           {categoryFormError && !categoryDialogOpen ? (

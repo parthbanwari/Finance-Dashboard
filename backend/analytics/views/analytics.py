@@ -1,5 +1,6 @@
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,6 +16,8 @@ from core.openapi import (
 )
 from users.permissions import IsAnalystOrAdminForAnalytics
 
+from analytics.models import UserAnalyticsNote
+from analytics.serializers import UserAnalyticsNoteSerializer
 from analytics.services.cache import get_or_set_analytics_cache
 from analytics.services.query_params import parse_limit
 from analytics.services.reports import (
@@ -54,7 +57,7 @@ RECENT_EXTRA = [
     tags=["Analytics"],
     summary="Summary: income, expenses, net",
     description=(
-        "**Analyst or Admin.** Returns per-currency totals (income and expenses as positive magnitudes), "
+        "**Viewer, Analyst, or Admin.** Returns per-currency totals (income and expenses as positive magnitudes), "
         "net balance, and transaction counts. Respects optional date filters."
     ),
     parameters=ANALYTICS_FILTERS,
@@ -83,7 +86,7 @@ class SummaryView(EnvelopeMessageMixin, APIView):
 @extend_schema(
     tags=["Analytics"],
     summary="Category breakdown",
-    description="**Analyst or Admin.** Income, expense, and net per category for the filtered period.",
+    description="**Viewer, Analyst, or Admin.** Income, expense, and net per category for the filtered period.",
     parameters=ANALYTICS_FILTERS,
     responses={
         200: OpenApiResponse(response=CategoryBreakdownResponseSchema),
@@ -107,7 +110,7 @@ class CategoryBreakdownView(APIView):
 @extend_schema(
     tags=["Analytics"],
     summary="Monthly trends",
-    description="**Analyst or Admin.** Aggregates by calendar month (`TruncMonth` on `transaction_date`).",
+    description="**Viewer, Analyst, or Admin.** Aggregates by calendar month (`TruncMonth` on `transaction_date`).",
     parameters=ANALYTICS_FILTERS,
     responses={
         200: OpenApiResponse(response=MonthlyTrendsResponseSchema),
@@ -135,7 +138,7 @@ class MonthlyTrendsView(EnvelopeMessageMixin, APIView):
     tags=["Analytics"],
     summary="Running balance series (every transaction)",
     description=(
-        "**Analyst or Admin.** Chronological list of transactions with cumulative **running_balance** "
+        "**Viewer, Analyst, or Admin.** Chronological list of transactions with cumulative **running_balance** "
         "after each row (income increases, expenses decrease). Same filters as other analytics. "
         "Use for cash-flow charts that step on every income/expense."
     ),
@@ -165,7 +168,7 @@ class RunningBalanceSeriesView(EnvelopeMessageMixin, APIView):
 @extend_schema(
     tags=["Analytics"],
     summary="Recent transactions",
-    description="**Analyst or Admin.** Latest rows by `transaction_date` for dashboard widgets; category is joined in one query.",
+    description="**Viewer, Analyst, or Admin.** Latest rows by `transaction_date` for dashboard widgets; category is joined in one query.",
     parameters=ANALYTICS_FILTERS + RECENT_EXTRA,
     responses={
         200: OpenApiResponse(response=RecentTransactionsResponseSchema),
@@ -188,3 +191,44 @@ class RecentTransactionsView(EnvelopeMessageMixin, APIView):
             builder=lambda: build_recent_transactions(request.user, request, limit),
         )
         return Response(data)
+
+
+@extend_schema(
+    tags=["Analytics"],
+    summary="Get or update personal analytics note",
+    description=(
+        "GET: any authenticated role can read their own persistent note/recommendation. "
+        "PATCH: Analyst or Admin can update their own note."
+    ),
+    request=UserAnalyticsNoteSerializer,
+    responses={
+        200: OpenApiResponse(response=UserAnalyticsNoteSerializer),
+        401: OpenApiResponse(response=StandardErrorSchema),
+        403: OpenApiResponse(response=StandardErrorSchema),
+    },
+)
+class AnalyticsNoteView(EnvelopeMessageMixin, APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_envelope_success_message(self):
+        return "Analytics note retrieved successfully."
+
+    def get(self, request):
+        note, _ = UserAnalyticsNote.objects.get_or_create(user=request.user)
+        data = UserAnalyticsNoteSerializer(note).data
+        return Response(data)
+
+    def patch(self, request):
+        role = getattr(request.user, "role", None)
+        if role not in ("analyst", "admin"):
+            raise PermissionDenied("Only Analyst or Admin can edit analytics notes.")
+        note, _ = UserAnalyticsNote.objects.get_or_create(user=request.user)
+        serializer = UserAnalyticsNoteSerializer(
+            note,
+            data=request.data,
+            partial=True,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save(analyst=request.user)
+        return Response(serializer.data)

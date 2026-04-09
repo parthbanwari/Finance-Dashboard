@@ -1,3 +1,5 @@
-"""Analytics responses are built as dicts in services — add serializers if you add writes."""
+"""Analytics serializers."""
 
-__all__: list[str] = []
+from analytics.serializers.note import UserAnalyticsNoteSerializer
+
+__all__ = ["UserAnalyticsNoteSerializer"]

@@ -98,3 +98,13 @@ export async function getRecentTransactions(params) {
   );
   return data;
 }
+
+export async function getAnalyticsNote() {
+  const { data } = await apiClient.get("/analytics/note/");
+  return data;
+}
+
+export async function updateAnalyticsNote(body) {
+  const { data } = await apiClient.patch("/analytics/note/", body);
+  return data;
+}

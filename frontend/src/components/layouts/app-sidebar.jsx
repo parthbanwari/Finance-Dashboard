@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 
+import { AccountStatusBadge } from "@/components/account-status-badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -18,8 +19,11 @@ import {
   SheetHeader,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useAdminTeamOptional } from "@/contexts/admin-team-context";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
+
+const TEAM_PATH = "/settings/team";
 
 const baseNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -33,36 +37,51 @@ function navForRole(role) {
     const out = [...baseNav];
     const idx = out.findIndex((o) => o.to === "/settings");
     if (idx >= 0) {
-      out.splice(idx, 0, { to: "/settings/team", label: "Team", icon: Users });
+      out.splice(idx, 0, { to: TEAM_PATH, label: "Team", icon: Users });
     }
     return out;
   }
   return baseNav;
 }
 
-function NavItems({ onNavigate, role }) {
+function NavItems({ onNavigate, role, teamInactiveCount = 0 }) {
   const nav = navForRole(role);
   return (
     <nav className="flex flex-col gap-1 p-2">
-      {nav.map(({ to, label, icon: Icon }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={to === "/settings"}
-          onClick={() => onNavigate?.()}
-          className={({ isActive }) =>
-            cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-              isActive
-                ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-                : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-            )
-          }
-        >
-          <Icon className="size-4 shrink-0 text-primary/90" aria-hidden />
-          {label}
-        </NavLink>
-      ))}
+      {nav.map(({ to, label, icon: Icon }) => {
+        const showTeamNotice = to === TEAM_PATH && teamInactiveCount > 0;
+        return (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === "/settings"}
+            onClick={() => onNavigate?.()}
+            aria-label={
+              showTeamNotice
+                ? `${label}, ${teamInactiveCount} inactive account${teamInactiveCount === 1 ? "" : "s"} need attention`
+                : undefined
+            }
+            className={({ isActive }) =>
+              cn(
+                "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                  : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+              )
+            }
+          >
+            <Icon className="size-4 shrink-0 text-primary/90" aria-hidden />
+            <span className="flex-1">{label}</span>
+            {showTeamNotice ? (
+              <span
+                className="size-2 shrink-0 rounded-full bg-amber-500 ring-2 ring-sidebar-border"
+                title={`${teamInactiveCount} inactive — open Team → Notifications`}
+                aria-hidden
+              />
+            ) : null}
+          </NavLink>
+        );
+      })}
     </nav>
   );
 }
@@ -70,6 +89,8 @@ function NavItems({ onNavigate, role }) {
 export function AppSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, logout } = useAuth();
+  const teamCtx = useAdminTeamOptional();
+  const teamInactiveCount = teamCtx?.inactiveCount ?? 0;
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -91,7 +112,7 @@ export function AppSidebar() {
             </p>
           </div>
         </div>
-        <NavItems role={user?.role} />
+        <NavItems role={user?.role} teamInactiveCount={teamInactiveCount} />
         <div className="mt-auto space-y-3 p-4">
           <Button
             type="button"
@@ -128,7 +149,11 @@ export function AppSidebar() {
                 </div>
               </div>
             </SheetHeader>
-            <NavItems onNavigate={() => setMobileOpen(false)} role={user?.role} />
+            <NavItems
+              onNavigate={() => setMobileOpen(false)}
+              role={user?.role}
+              teamInactiveCount={teamInactiveCount}
+            />
             <div className="mt-auto border-t border-sidebar-border p-4">
               <Button
                 type="button"
@@ -145,9 +170,19 @@ export function AppSidebar() {
             </div>
           </SheetContent>
         </Sheet>
-        <span className="ml-2 inline-flex min-w-0 items-center gap-1.5 text-sm font-semibold">
-          <IndianRupee className="size-4 text-primary" aria-hidden />
-          <span className="truncate">Finance Dashboard</span>
+        <span className="ml-2 flex min-w-0 flex-1 items-center gap-2 text-sm font-semibold">
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <IndianRupee className="size-4 shrink-0 text-primary" aria-hidden />
+            <span className="truncate">Finance Dashboard</span>
+          </span>
+          {user ? (
+            <AccountStatusBadge
+              active={user.is_active !== false}
+              size="sm"
+              className="ml-auto shrink-0"
+              aria-label={`Your account is ${user.is_active !== false ? "active" : "inactive"}`}
+            />
+          ) : null}
         </span>
       </div>
     </>

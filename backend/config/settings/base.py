@@ -128,7 +128,7 @@ AUTH_USER_MODEL = "users.User"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "users.authentication.StaleAwareJWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_PAGINATION_CLASS": "core.pagination.StandardResultsSetPagination",
@@ -154,6 +154,9 @@ SIMPLE_JWT = {
     # Enable with `rest_framework_simplejwt.token_blacklist` if you need rotation + revocation.
     "ROTATE_REFRESH_TOKENS": False,
 }
+
+# Auto-inactivate non-admin accounts when last_login (or date_joined if never logged in) is older than this.
+INACTIVE_AFTER_DAYS = max(1, int(os.environ.get("INACTIVE_AFTER_DAYS", "7")))
 
 # Cache (sessions). Use Redis in production: set CACHES via env / prod settings.
 CACHES = {

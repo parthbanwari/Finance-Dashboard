@@ -7,14 +7,15 @@ import {
   useState,
 } from "react";
 import { Outlet } from "react-router-dom";
+import { subDays } from "date-fns";
 
 import * as dashboardApi from "@/api/dashboardApi";
-import * as transactionApi from "@/api/transactionApi";
 import { useAuth } from "@/contexts/auth-context";
 import { getAxiosErrorMessage } from "@/lib/errors";
+import { formatYmd } from "@/lib/dates";
 
 function canAccessAnalytics(role) {
-  return role === "analyst" || role === "admin";
+  return role === "viewer" || role === "analyst" || role === "admin";
 }
 
 function buildAnalyticsParams(dateFrom, dateTo) {
@@ -22,6 +23,15 @@ function buildAnalyticsParams(dateFrom, dateTo) {
   if (dateFrom) p.date_from = dateFrom;
   if (dateTo) p.date_to = dateTo;
   return p;
+}
+
+function defaultLast30Days() {
+  const end = new Date();
+  const start = subDays(end, 29);
+  return {
+    from: formatYmd(start),
+    to: formatYmd(end),
+  };
 }
 
 const DashboardDataContext = createContext(null);
@@ -36,8 +46,8 @@ export function DashboardDataProvider() {
   const [recent, setRecent] = useState([]);
   const [analyticsForbidden, setAnalyticsForbidden] = useState(false);
 
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateFrom, setDateFrom] = useState(() => defaultLast30Days().from);
+  const [dateTo, setDateTo] = useState(() => defaultLast30Days().to);
   const [tick, setTick] = useState(0);
 
   const refetch = useCallback(() => setTick((t) => t + 1), []);
@@ -55,31 +65,7 @@ export function DashboardDataProvider() {
     const run = async () => {
       const params = buildAnalyticsParams(dateFrom, dateTo);
 
-      if (!canAccessAnalytics(user?.role)) {
-        setAnalyticsForbidden(true);
-        setSummary(null);
-        setCategoryBreakdown(null);
-        setRunningBalanceSeries(null);
-        try {
-          const list = await transactionApi.listTransactions({
-            page_size: 10,
-            ordering: "-transaction_date",
-          });
-          if (!cancelled) {
-            setRecent(list.results);
-            setLoading(false);
-          }
-        } catch (e) {
-          if (!cancelled) {
-            setError(getAxiosErrorMessage(e));
-            setRecent([]);
-            setLoading(false);
-          }
-        }
-        return;
-      }
-
-      setAnalyticsForbidden(false);
+      setAnalyticsForbidden(!canAccessAnalytics(user?.role));
       try {
         const [s, c, rb, r] = await Promise.all([
           dashboardApi.getSummary(params),

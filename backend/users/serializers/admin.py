@@ -20,8 +20,30 @@ class UserAdminSerializer(serializers.ModelSerializer):
             "role",
             "is_active",
             "is_staff",
+            "last_login",
             "date_joined",
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "username", "is_staff", "date_joined", "created_at", "updated_at")
+        read_only_fields = (
+            "id",
+            "username",
+            "is_staff",
+            "last_login",
+            "date_joined",
+            "created_at",
+            "updated_at",
+        )
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        if (
+            request
+            and self.instance
+            and attrs.get("is_active") is False
+            and self.instance.pk == request.user.pk
+        ):
+            raise serializers.ValidationError(
+                {"is_active": "You cannot deactivate your own account."},
+            )
+        return attrs

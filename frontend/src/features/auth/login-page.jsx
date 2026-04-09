@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getAxiosErrorMessage } from "@/lib/errors";
+import { parseAxiosError } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 
 const DEMO_VIEWER = "viewer@demo.finance";
@@ -34,7 +34,9 @@ export function LoginPage() {
   const [adminEmail, setAdminEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
+  const [formErrorCode, setFormErrorCode] = useState(null);
   const [adminError, setAdminError] = useState(null);
+  const [adminErrorCode, setAdminErrorCode] = useState(null);
 
   const applyMode = useCallback((next) => {
     setMode(next);
@@ -49,7 +51,9 @@ export function LoginPage() {
     setPassword("");
     setAdminEmail("");
     setFormError(null);
+    setFormErrorCode(null);
     setAdminError(null);
+    setAdminErrorCode(null);
   }, [location.pathname, location.key]);
 
   if (loading) {
@@ -71,6 +75,7 @@ export function LoginPage() {
   async function onSubmitMain(e) {
     e.preventDefault();
     setFormError(null);
+    setFormErrorCode(null);
     const trimmed = email.trim();
     if (!trimmed) {
       setFormError("Enter your email address.");
@@ -85,7 +90,9 @@ export function LoginPage() {
       await login(trimmed, password, mode);
       navigate(from, { replace: true });
     } catch (err) {
-      setFormError(getAxiosErrorMessage(err));
+      const { message, errorCode } = parseAxiosError(err);
+      setFormError(message);
+      setFormErrorCode(errorCode);
     } finally {
       setSubmitting(false);
     }
@@ -94,6 +101,7 @@ export function LoginPage() {
   async function onSubmitAdmin(e) {
     e.preventDefault();
     setAdminError(null);
+    setAdminErrorCode(null);
     const trimmed = adminEmail.trim().toLowerCase();
     if (!trimmed) {
       setAdminError("Enter the admin email.");
@@ -108,7 +116,9 @@ export function LoginPage() {
       await login(DEMO_ADMIN, "");
       navigate(from, { replace: true });
     } catch (err) {
-      setAdminError(getAxiosErrorMessage(err));
+      const { message, errorCode } = parseAxiosError(err);
+      setAdminError(message);
+      setAdminErrorCode(errorCode);
     } finally {
       setSubmitting(false);
     }
@@ -137,8 +147,10 @@ export function LoginPage() {
                 onClick={() => {
                   setPanel("admin");
                   setFormError(null);
+                  setFormErrorCode(null);
                   setAdminEmail("");
                   setAdminError(null);
+                  setAdminErrorCode(null);
                 }}
               >
                 Sign in as admin
@@ -198,9 +210,23 @@ export function LoginPage() {
                     />
                   </div>
                   {formError ? (
-                    <p className="text-sm text-destructive" role="alert">
-                      {formError}
-                    </p>
+                    <div
+                      role="alert"
+                      className={cn(
+                        "rounded-md border px-3 py-2.5 text-sm",
+                        formErrorCode === "account_inactive"
+                          ? "border-amber-500/45 bg-amber-500/10 text-amber-950 dark:text-amber-50"
+                          : "border-destructive/40 bg-destructive/10 text-destructive",
+                      )}
+                    >
+                      <p className="font-medium leading-snug">{formError}</p>
+                      {formErrorCode === "account_inactive" ? (
+                        <p className="mt-2 text-xs leading-relaxed opacity-90">
+                          An administrator must turn your account back to Active. If you are not sure who
+                          that is, contact your organization support.
+                        </p>
+                      ) : null}
+                    </div>
                   ) : null}
                   <Button type="submit" className="w-full" disabled={submitting}>
                     {submitting ? "Signing in…" : "Sign in"}
@@ -231,9 +257,23 @@ export function LoginPage() {
                   </p>
                 </div>
                 {adminError ? (
-                  <p className="text-sm text-destructive" role="alert">
-                    {adminError}
-                  </p>
+                  <div
+                    role="alert"
+                    className={cn(
+                      "rounded-md border px-3 py-2.5 text-sm",
+                      adminErrorCode === "account_inactive"
+                        ? "border-amber-500/45 bg-amber-500/10 text-amber-950 dark:text-amber-50"
+                        : "border-destructive/40 bg-destructive/10 text-destructive",
+                    )}
+                  >
+                    <p className="font-medium leading-snug">{adminError}</p>
+                    {adminErrorCode === "account_inactive" ? (
+                      <p className="mt-2 text-xs leading-relaxed opacity-90">
+                        Another admin can reactivate you under Team. You cannot use this
+                        passwordless screen until your account is Active again.
+                      </p>
+                    ) : null}
+                  </div>
                 ) : null}
                 <Button type="submit" className="w-full" disabled={submitting}>
                   {submitting ? "Signing in…" : "Sign in"}
@@ -246,6 +286,7 @@ export function LoginPage() {
                 onClick={() => {
                   setPanel("staff");
                   setAdminError(null);
+                  setAdminErrorCode(null);
                 }}
               >
                 ← Back to sign in with email and password

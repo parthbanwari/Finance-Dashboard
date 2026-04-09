@@ -43,16 +43,20 @@ class IsAnalystOrAdmin(permissions.BasePermission):
 
 class IsAnalystOrAdminForAnalytics(permissions.BasePermission):
     """
-    Analyst or Admin — analytics/reporting endpoints.
-    Viewer can read domain data but not aggregated analytics (per product rules).
+    Backwards-compatible name: allow all authenticated app roles to view analytics.
+    Viewers stay read-only because write endpoints still use stricter permissions.
     """
 
-    message = "Analyst or Admin role required to access analytics."
+    message = "Authenticated role required to access analytics."
 
     def has_permission(self, request, view) -> bool:
         if request.method == "OPTIONS":
             return True
-        return get_role(request.user) in (User.Role.ANALYST, User.Role.ADMIN)
+        return get_role(request.user) in (
+            User.Role.VIEWER,
+            User.Role.ANALYST,
+            User.Role.ADMIN,
+        )
 
 
 class IsAnyAuthenticatedRole(permissions.BasePermission):

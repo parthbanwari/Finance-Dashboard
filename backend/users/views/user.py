@@ -11,7 +11,10 @@ from users.serializers import UserSerializer
     get=extend_schema(
         tags=["Users"],
         summary="Current user profile",
-        description="Returns the authenticated user's profile. **Role** is read-only in responses.",
+        description=(
+            "Returns the authenticated user's profile. **Role** and **is_active** are read-only here; "
+            "admins change account status from the Team screen."
+        ),
     ),
     patch=extend_schema(
         tags=["Users"],

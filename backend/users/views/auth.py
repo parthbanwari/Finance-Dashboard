@@ -3,7 +3,7 @@ from core.throttles import AuthRefreshRateThrottle, AuthTokenRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from core.openapi import TokenPairResponseSchema
-from users.serializers.tokens import CustomTokenObtainPairSerializer
+from users.serializers.tokens import CustomTokenObtainPairSerializer, CustomTokenRefreshSerializer
 
 
 @extend_schema_view(
@@ -58,5 +58,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     ),
 )
 class TokenRefreshViewWithSchema(TokenRefreshView):
-    """Same behavior as SimpleJWT's TokenRefreshView; OpenAPI metadata only."""
+    """Refreshes access JWT and updates last_login for the inactivity policy."""
+    serializer_class = CustomTokenRefreshSerializer
     throttle_classes = [AuthRefreshRateThrottle]

@@ -1,6 +1,7 @@
 from django.urls import path
 
 from analytics.views import (
+    AnalyticsNoteView,
     CategoryBreakdownView,
     MonthlyTrendsView,
     RecentTransactionsView,
@@ -30,4 +31,5 @@ urlpatterns = [
         RecentTransactionsView.as_view(),
         name="analytics-recent-transactions",
     ),
+    path("note/", AnalyticsNoteView.as_view(), name="analytics-note"),
 ]

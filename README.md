@@ -67,12 +67,6 @@ Docs:
 - Transaction delete is a **soft delete** (hidden from normal views, not hard-erased immediately).
 - Category delete can fail if transactions still reference that category.
 
-## Security (for GitHub)
-
-- Never commit `.env`
-- Never expose real secrets, DB URIs, or private credentials
-- Keep environment values configurable via `.env.example`
-
 ## Backend API Brief (Implementation Notes)
 
 - **Architecture:** Django REST + modular apps (`users`, `transactions`, `analytics`) with `/api/v1` versioned routing.
