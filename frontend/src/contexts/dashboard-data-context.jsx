@@ -7,12 +7,10 @@ import {
   useState,
 } from "react";
 import { Outlet } from "react-router-dom";
-import { subDays } from "date-fns";
 
 import * as dashboardApi from "@/api/dashboardApi";
 import { useAuth } from "@/contexts/auth-context";
 import { getAxiosErrorMessage } from "@/lib/errors";
-import { formatYmd } from "@/lib/dates";
 
 function canAccessAnalytics(role) {
   return role === "viewer" || role === "analyst" || role === "admin";
@@ -23,15 +21,6 @@ function buildAnalyticsParams(dateFrom, dateTo) {
   if (dateFrom) p.date_from = dateFrom;
   if (dateTo) p.date_to = dateTo;
   return p;
-}
-
-function defaultLast30Days() {
-  const end = new Date();
-  const start = subDays(end, 29);
-  return {
-    from: formatYmd(start),
-    to: formatYmd(end),
-  };
 }
 
 const DashboardDataContext = createContext(null);
@@ -46,8 +35,8 @@ export function DashboardDataProvider() {
   const [recent, setRecent] = useState([]);
   const [analyticsForbidden, setAnalyticsForbidden] = useState(false);
 
-  const [dateFrom, setDateFrom] = useState(() => defaultLast30Days().from);
-  const [dateTo, setDateTo] = useState(() => defaultLast30Days().to);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [tick, setTick] = useState(0);
 
   const refetch = useCallback(() => setTick((t) => t + 1), []);

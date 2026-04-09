@@ -235,7 +235,7 @@ export function AnalyticsPage() {
       <div>
         <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Analytics</h2>
         <p className="text-muted-foreground">
-          Trends and category breakdowns — filters apply to charts.
+          Trends and category insights. Includes a 50/30/20 budget check and any analyst guidance shared for your account.
         </p>
       </div>
 
