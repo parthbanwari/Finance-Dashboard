@@ -58,6 +58,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     ),
 )
 class TokenRefreshViewWithSchema(TokenRefreshView):
-    """Refreshes access JWT and updates last_login for the inactivity policy."""
+    """Refreshes access JWT and updates last_login for display purposes."""
     serializer_class = CustomTokenRefreshSerializer
     throttle_classes = [AuthRefreshRateThrottle]

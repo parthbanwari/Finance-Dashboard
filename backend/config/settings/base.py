@@ -128,7 +128,7 @@ AUTH_USER_MODEL = "users.User"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "users.authentication.StaleAwareJWTAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_PAGINATION_CLASS": "core.pagination.StandardResultsSetPagination",
@@ -154,9 +154,6 @@ SIMPLE_JWT = {
     # Enable with `rest_framework_simplejwt.token_blacklist` if you need rotation + revocation.
     "ROTATE_REFRESH_TOKENS": False,
 }
-
-# Auto-inactivate non-admin accounts when last_login (or date_joined if never logged in) is older than this.
-INACTIVE_AFTER_DAYS = max(1, int(os.environ.get("INACTIVE_AFTER_DAYS", "7")))
 
 # Cache (sessions). Use Redis in production: set CACHES via env / prod settings.
 CACHES = {
@@ -237,6 +234,27 @@ CORS_ALLOWED_ORIGINS = _merge_unique(_cors_local, _cors_deployed_defaults, _cors
 
 # Match browser origins for CSRF on HTTPS (admin, session cookies, etc.).
 CSRF_TRUSTED_ORIGINS = _merge_unique(_cors_local, _cors_deployed_defaults, _cors_from_env)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": os.environ.get("DJANGO_LOG_LEVEL", "INFO"),
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Finance Dashboard API",

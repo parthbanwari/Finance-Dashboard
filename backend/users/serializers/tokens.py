@@ -43,12 +43,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["role"] = user.role
         return token
 
-    @staticmethod
-    def _reject_if_stale_for_login(user):
-        if user and user.is_active and inactivity.is_stale(user):
-            inactivity.deactivate_for_inactivity(user)
-            raise serializers.ValidationError({"detail": [ACCOUNT_INACTIVE_LOGIN]})
-
     def validate(self, attrs):
         email = (attrs.get("email") or "").strip().lower()
         role_hint = attrs.get("role")
@@ -69,7 +63,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 and user.is_active
                 and getattr(user, "role", None) == User.Role.ADMIN
             ):
-                self._reject_if_stale_for_login(user)
                 inactivity.touch_last_login(user)
                 refresh = self.get_token(user)
                 return {
@@ -107,7 +100,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             user.role = role_hint
             user.save(update_fields=["role", "updated_at"])
 
-        self._reject_if_stale_for_login(user)
         inactivity.touch_last_login(user)
         refresh = self.get_token(user)
         return {
@@ -159,7 +151,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class CustomTokenRefreshSerializer(TokenRefreshSerializer):
-    """Refresh access token and bump last_login so active sessions reset the inactivity window."""
+    """Refresh access token and bump last_login for display purposes."""
 
     def validate(self, attrs):
         refresh = RefreshToken(attrs["refresh"])
@@ -168,10 +160,6 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
         user = UserModel.objects.filter(
             **{api_settings.USER_ID_FIELD: user_id},
         ).first()
-
-        if user and user.is_active and inactivity.is_stale(user):
-            inactivity.deactivate_for_inactivity(user)
-            raise serializers.ValidationError({"detail": [ACCOUNT_INACTIVE_LOGIN]})
 
         data = super().validate(attrs)
         if user and user.is_active:
