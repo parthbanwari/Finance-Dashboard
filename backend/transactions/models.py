@@ -104,6 +104,7 @@ class Transaction(models.Model):
     all_objects = models.Manager()
 
     class Meta:
+        base_manager_name = "objects"
         ordering = ["-transaction_date", "-id"]
         indexes = [
             # Typical list: “my transactions in a date range, not deleted”
