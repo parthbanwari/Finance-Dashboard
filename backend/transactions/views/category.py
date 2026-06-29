@@ -1,5 +1,7 @@
+from django.db.models import ProtectedError
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets
+from rest_framework.exceptions import ValidationError
 
 from core.mixins import EnvelopeMessageMixin
 from users.permissions import CategoryPermission
@@ -50,3 +52,11 @@ class CategoryViewSet(EnvelopeMessageMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    def perform_destroy(self, instance):
+        try:
+            instance.delete()
+        except ProtectedError:
+            raise ValidationError(
+                {"detail": "Cannot delete this category while transactions still reference it."}
+            )
